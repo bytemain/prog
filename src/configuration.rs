@@ -5,12 +5,12 @@ use std::collections::HashMap;
 
 pub struct Config {
     #[serde(default)]
-    base: Vec<String>,
+    pub base: Vec<String>,
     #[serde(default)]
-    alias: HashMap<String, String>,
+    pub alias: HashMap<String, String>,
 }
 
-pub const DEFAULT_CONFIG: &str = indoc! {r#"
+pub const DEFAULT_CONFIG_TOML: &str = indoc! {r#"
 base = [
 
 ]

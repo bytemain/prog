@@ -1,5 +1,11 @@
 # Quick Start
 
+## Command
+
+```sh
+prog clone https://github.com/bytemain/prog
+```
+
 ## Configuration
 
 configuration should be a `.toml` file:
