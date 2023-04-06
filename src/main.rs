@@ -1,18 +1,18 @@
+mod commands;
 mod configuration;
+mod context;
+mod helpers;
 
 use config::Config;
 
-use std::env;
+use ansi_term::Colour::Red;
+
 use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::process::exit;
 
-use clap::{Args, Parser, Subcommand};
+use clap::Parser;
 
-#[derive(Subcommand, Debug)]
-enum Commands {
-    Clone { url: String, rest: Vec<String> },
-}
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
 struct Cli {
@@ -20,26 +20,17 @@ struct Cli {
     config: Option<PathBuf>,
 
     #[command(subcommand)]
-    command: Option<Commands>,
-}
+    command: Option<commands::constants::ECommands>,
 
-fn join_home_dir(path: &str) -> String {
-    let mut home_dir = match env::var_os("HOME") {
-        Some(path) => PathBuf::from(path),
-        None => panic!("Could not find home directory"),
-    };
-
-    home_dir.push(path);
-
-    match home_dir.to_str() {
-        Some(path_str) => path_str.to_owned(),
-        None => String::new(),
-    }
+    #[clap(flatten)]
+    verbose: clap_verbosity_flag::Verbosity,
 }
 
 fn main() {
     let cli = Cli::parse();
-    let mut config_file_path_string = join_home_dir(".prog/config.toml");
+
+    let mut config_file_path_string =
+        helpers::path::join_home_dir(configuration::DEFAULT_CONFIG_TOML_PATH);
 
     if let Some(config_path) = cli.config.as_deref() {
         println!("Value for config: {}", config_path.display());
@@ -82,12 +73,12 @@ fn main() {
         .build()
         .unwrap();
 
-    let settings = config_builder
+    let config = config_builder
         .try_deserialize::<configuration::Config>()
         .unwrap();
-    println!("{:?}", settings);
+    println!("{:?}", config);
 
-    if settings.base.len() == 0 {
+    if config.base.len() == 0 {
         println!(
             "No base path found, please add one to your config file: {}",
             config_file_path_string
@@ -95,15 +86,16 @@ fn main() {
         exit(1)
     }
 
+    let context = context::Context::new(&config);
+
     let mut not_match = false;
     match &cli.command {
-        Some(Commands::Clone { url: repo, rest }) => {
+        Some(commands::constants::ECommands::Clone { url: repo, rest }) => {
             println!("Clone command given");
-            println!("Repo: {}", repo);
-            println!("Rest: {:?}", rest);
+            commands::clone::run(&context, &repo, &rest)
         }
         None => {
-            println!("No command given");
+            println!("{}", Red.paint("No command given"));
             not_match = true
         }
     }

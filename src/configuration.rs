@@ -22,3 +22,5 @@ base = [
 
 "#
 };
+
+pub const DEFAULT_CONFIG_TOML_PATH: &str = ".prog/config.toml";

@@ -10,3 +10,8 @@ config = "0.13.3"
 serde = "1.0.158"
 indoc = "2"
 clap = { version = "4.1.11", features = ["derive"] }
+ansi_term = "0.12.1"
+clap-verbosity-flag = "2.0.1"
+url = "2.3.1"
+anyhow = "1.0.70"
+git2 = "0.17.0"
