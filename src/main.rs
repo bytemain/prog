@@ -1,7 +1,9 @@
 mod commands;
 mod configuration;
+mod constants;
 mod context;
 mod helpers;
+mod storage;
 
 use config::Config;
 
@@ -29,8 +31,7 @@ struct Cli {
 fn main() {
     let cli = Cli::parse();
 
-    let mut config_file_path_string =
-        helpers::path::join_home_dir(configuration::DEFAULT_CONFIG_TOML_PATH);
+    let mut config_file_path_string = helpers::path::get_config_path(constants::CONFIG_TOML_FILE);
 
     if let Some(config_path) = cli.config.as_deref() {
         println!("Value for config: {}", config_path.display());
@@ -57,7 +58,7 @@ fn main() {
             Err(err) => panic!("Could not create config file: {}", err),
         };
         if config_file_path_string.ends_with(".toml") {
-            match config_file.write_all(configuration::DEFAULT_CONFIG_TOML.as_bytes()) {
+            match config_file.write_all(constants::DEFAULT_CONFIG_TOML.as_bytes()) {
                 Ok(_) => {}
                 Err(err) => panic!("Could not write default config: {}", err),
             }
@@ -93,6 +94,10 @@ fn main() {
         Some(commands::constants::ECommands::Clone { url: repo, rest }) => {
             println!("Clone command given");
             commands::clone::run(&context, &repo, &rest)
+        }
+        Some(commands::constants::ECommands::Query { keyword }) => {
+            println!("Query command given");
+            commands::query::run(&context, &keyword)
         }
         None => {
             println!("{}", Red.paint("No command given"));

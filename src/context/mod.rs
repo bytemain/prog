@@ -1,14 +1,18 @@
 use super::configuration;
+use super::constants;
+use super::storage;
 use crate::helpers;
 use anyhow::{bail, Ok, Result};
 
 pub struct Context<'a> {
     config: &'a configuration::Config,
+    storage: storage::Storage,
 }
 
 impl<'a> Context<'a> {
     pub fn new(config: &'a configuration::Config) -> Self {
-        Self { config }
+        let storage = storage::Storage::new();
+        Self { config, storage }
     }
 
     pub fn get_base_dir(&self, uri: &String) -> Result<&String> {
@@ -17,7 +21,7 @@ impl<'a> Context<'a> {
         if self.config.base.len() == 0 {
             bail!(
                 "please configure base dir in : {}",
-                helpers::path::join_home_dir(configuration::DEFAULT_CONFIG_TOML_PATH)
+                helpers::path::get_config_path(constants::CONFIG_TOML_FILE)
             );
         }
 
