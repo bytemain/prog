@@ -3,7 +3,6 @@ mod configuration;
 mod constants;
 mod context;
 mod helpers;
-mod storage;
 
 use config::Config;
 
@@ -91,9 +90,9 @@ fn main() {
 
     let mut not_match = false;
     match &cli.command {
-        Some(commands::constants::ECommands::Clone { url: repo, rest }) => {
+        Some(commands::constants::ECommands::Clone { url, rest }) => {
             println!("Clone command given");
-            commands::clone::run(&context, &repo, &rest)
+            commands::clone::run(&context, &url, &rest)
         }
         Some(commands::constants::ECommands::Query { keyword }) => {
             println!("Query command given");

@@ -1,10 +1,13 @@
 use crate::{constants, helpers};
+use git_url_parse::GitUrl;
 
 struct Record {
-    id: i32,
     created_at: i64,
     updated_at: i64,
-    name: String,
+    repo: String,
+    owner: String,
+    base_url: String,
+    local_path: String,
 }
 
 pub struct Storage {
@@ -17,4 +20,6 @@ impl Storage {
 
         Self { database_path }
     }
+
+    pub fn recordItem(&self, remote_url: &str, git_url: &GitUrl, target_path: &str) {}
 }
