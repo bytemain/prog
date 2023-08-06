@@ -17,4 +17,4 @@ pub const DEFAULT_CONFIG_PATH: &str = ".prog";
 
 pub const CONFIG_TOML_FILE: &str = "config.toml";
 
-pub const DATABASE_FILE: &str = "database.toml";
+pub const DATABASE_FILE: &str = "db.ejdb";

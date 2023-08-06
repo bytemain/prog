@@ -7,7 +7,7 @@ use super::constants;
 pub struct Context<'a> {
     config: &'a configuration::Config,
     pub path: path::Path<'a>,
-    pub storage: storage::Storage,
+    pub storage: storage::Storage<'a>,
 }
 
 impl<'a> Context<'a> {
