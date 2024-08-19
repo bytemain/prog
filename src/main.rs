@@ -30,18 +30,20 @@ struct Cli {
 fn main() {
     let cli = Cli::parse();
 
-    let mut config_file_path_string = helpers::path::get_config_path(constants::CONFIG_TOML_FILE);
+    let mut config_file_path = helpers::path::get_config_path(constants::CONFIG_TOML_FILE);
 
     if let Some(config_path) = cli.config.as_deref() {
         println!("Value for config: {}", config_path.display());
-        config_file_path_string = config_path.to_str().unwrap().to_owned();
+        config_file_path = config_path.to_path_buf();
     }
 
-    let config_path = Path::new(&config_file_path_string);
+    let config_file_path_str = config_file_path.to_str().unwrap();
+
+    let config_path = Path::new(&config_file_path);
     if !config_path.exists() {
         print!(
             "Could not find config file at {}, create default",
-            config_file_path_string
+            config_file_path_str
         );
         let config_dir = config_path.parent().unwrap();
         if !config_dir.exists() {
@@ -52,11 +54,11 @@ fn main() {
         }
 
         // auto create config file
-        let mut config_file = match std::fs::File::create(&config_file_path_string) {
+        let mut config_file = match std::fs::File::create(&config_file_path) {
             Ok(file) => file,
             Err(err) => panic!("Could not create config file: {}", err),
         };
-        if config_file_path_string.ends_with(".toml") {
+        if config_file_path.ends_with(".toml") {
             match config_file.write_all(constants::DEFAULT_CONFIG_TOML.as_bytes()) {
                 Ok(_) => {}
                 Err(err) => panic!("Could not write default config: {}", err),
@@ -64,9 +66,9 @@ fn main() {
         }
     }
 
-    println!("Final Path: {:?}", config_file_path_string);
+    println!("Final Path: {:?}", config_file_path);
     let config_builder = Config::builder()
-        .add_source(config::File::with_name(config_file_path_string.as_str()))
+        .add_source(config::File::with_name(config_file_path_str))
         // Add in settings from the environment (with a prefix of APP)
         // Eg.. `APP_DEBUG=1 ./target/app` would set the `debug` key
         .add_source(config::Environment::with_prefix("PROG"))
@@ -81,18 +83,18 @@ fn main() {
     if config.base.len() == 0 {
         println!(
             "No base path found, please add one to your config file: {}",
-            config_file_path_string
+            config_file_path_str
         );
         exit(1)
     }
 
-    let context = context::Context::new(&config);
+    let mut context = context::Context::new(&config);
 
     let mut not_match = false;
     match &cli.command {
         Some(commands::constants::ECommands::Clone { url, rest }) => {
             println!("Clone command given");
-            commands::clone::run(&context, &url, &rest)
+            commands::clone::run(&mut context, &url, &rest)
         }
         Some(commands::constants::ECommands::Query { keyword }) => {
             println!("Query command given");

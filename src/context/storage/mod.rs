@@ -1,11 +1,9 @@
-use std::{borrow::Borrow, collections::HashMap};
-
 mod utils;
 
 use crate::{constants, helpers};
 use git_url_parse::GitUrl;
 
-use ejdb::{bson, Database};
+use rusqlite::{Connection, Result};
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Serialize, Deserialize, PartialEq, Debug)]
@@ -24,23 +22,22 @@ struct Record {
     remote_url: String,
 }
 
-pub struct Storage<'a> {
-    db: Database,
-    collection_cache: HashMap<String, ejdb::Collection<'a>>,
+pub struct Storage {
+    conn: Connection,
 }
 
-impl<'a> Storage<'a> {
+impl Storage {
     pub fn new() -> Self {
         let database_path = helpers::path::get_config_path(constants::DATABASE_FILE);
-        let db = Database::open(database_path).unwrap();
-        Self {
-            db,
-            collection_cache: HashMap::new(),
+        let conn = Connection::open(database_path);
+
+        match conn {
+            Ok(conn) => Self { conn },
+            Err(e) => panic!("Could not open database: {}", e),
         }
     }
 
-    pub fn record_item(&'a mut self, base_dir: &str, remote_url: &str, git_url: &GitUrl) {
-        let collection = self.get_records_collection();
+    pub fn record_item(&self, base_dir: &str, remote_url: &str, git_url: &GitUrl) {
         let record = Record {
             created_at: helpers::time::get_current_timestamp(),
             updated_at: helpers::time::get_current_timestamp(),
@@ -50,18 +47,5 @@ impl<'a> Storage<'a> {
             remote_url: remote_url.to_string(),
             base_dir: base_dir.to_string(),
         };
-        collection
-            .save(bson::to_bson(&record).unwrap().as_document().unwrap())
-            .unwrap();
-    }
-    fn get_collection(&'a mut self, name: &str) -> &ejdb::Collection<'a> {
-        self.collection_cache
-            .entry(name.to_string())
-            .or_insert_with(|| self.db.collection(name).unwrap())
-    }
-
-    fn get_records_collection(&'a mut self) -> &ejdb::Collection<'a> {
-        let collection = self.get_collection("records");
-        collection
     }
 }
