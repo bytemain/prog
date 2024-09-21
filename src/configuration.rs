@@ -1,7 +1,7 @@
+use crate::{constants, helpers};
+use anyhow::bail;
 use serde::Deserialize;
 use std::collections::HashMap;
-use anyhow::bail;
-use crate::{constants, helpers};
 
 #[derive(Deserialize, Debug, Clone)]
 pub struct Config {

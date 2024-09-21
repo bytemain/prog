@@ -13,9 +13,9 @@ use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::process::exit;
 
-use commands::constants::ECommands;
 use clap::{Args, Command, CommandFactory, Parser, Subcommand, ValueHint};
 use clap_complete::{generate, Generator, Shell};
+use commands::constants::ECommands;
 use log::{debug, error, info};
 
 #[derive(Parser, Debug)]
@@ -41,7 +41,6 @@ fn main() {
         .format_timestamp(None)
         .filter_level(cli.verbose.log_level_filter())
         .init();
-
 
     let mut config_file_path = helpers::path::get_config_path(constants::CONFIG_TOML_FILE);
     if let Some(config_path) = cli.config.as_deref() {

@@ -1,4 +1,6 @@
+use crate::context::storage;
 use crate::helpers::path::get_config_path;
+use crate::{configuration, constants};
 use config::Config;
 use log::{debug, error};
 use std::cell::Ref;
@@ -6,8 +8,6 @@ use std::cell::RefCell;
 use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::process::exit;
-use crate::{configuration, constants};
-use crate::context::storage;
 
 pub struct Context {
     pub config: RefCell<configuration::Config>,
