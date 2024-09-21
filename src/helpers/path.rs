@@ -1,23 +1,21 @@
 use std::env;
 use std::path::PathBuf;
 
-use crate::constants;
+use directories::BaseDirs;
+
+use std::cell::LazyCell;
+
+const base_dirs: LazyCell<BaseDirs> = LazyCell::new(|| BaseDirs::new().unwrap());
 
 pub fn join_home_dir(path: &str) -> PathBuf {
-    let mut home_dir = match env::var_os("HOME") {
-        Some(path) => PathBuf::from(path),
-        None => panic!("Could not find home directory"),
-    };
-
+    let mut home_dir = base_dirs.home_dir().to_owned();
     home_dir.push(path);
     home_dir
 }
 
-pub fn get_config_path(file: &str) -> String {
-    let config_path: PathBuf = join_home_dir(constants::DEFAULT_CONFIG_PATH);
-    let file_path = config_path.join(file);
-    match file_path.to_str() {
-        Some(path_str) => path_str.to_owned(),
-        None => String::new(),
-    }
+
+pub fn get_config_path(file: &str) -> PathBuf {
+    let mut config_dir = join_home_dir(".prog");
+    config_dir.push(file);
+    config_dir
 }

@@ -17,10 +17,7 @@ fn run(cmd: String) -> anyhow::Result<()> {
 
     let reader = BufReader::new(output);
 
-    reader
-        .lines()
-        .filter_map(|line| line.ok())
-        .for_each(|line| println!("{}", line));
+    reader.lines().filter_map(|line| line.ok()).for_each(|line| println!("{}", line));
 
     Ok(())
 }

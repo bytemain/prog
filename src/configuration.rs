@@ -1,7 +1,7 @@
 use serde::Deserialize;
 use std::collections::HashMap;
-#[derive(Deserialize, Debug)]
 
+#[derive(Deserialize, Debug, Clone)]
 pub struct Config {
     #[serde(default)]
     pub base: Vec<String>,

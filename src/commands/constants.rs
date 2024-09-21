@@ -9,6 +9,6 @@ pub enum ECommands {
         rest: Vec<String>,
     },
     Query {
-        keyword: String
-    }
+        keyword: String,
+    },
 }
