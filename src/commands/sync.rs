@@ -1,7 +1,7 @@
 use crate::context::Context;
-use std::fs::read_dir;
 use crate::helpers::git::url::get_remote_url;
-
+use log::info;
+use std::fs::read_dir;
 
 #[derive(Debug, Clone)]
 pub struct SyncItem {
@@ -15,7 +15,7 @@ pub struct SyncItem {
 fn read_repo_from_dir(dir: &str) -> Vec<SyncItem> {
     let mut repos = Vec::new();
 
-    println!("Reading repos from {}", dir);
+    info!("Reading repos from {}", dir);
     let paths = std::fs::read_dir(dir).unwrap();
     for path in paths {
         let path = path.unwrap().path();
@@ -38,7 +38,7 @@ fn read_repo_from_dir(dir: &str) -> Vec<SyncItem> {
                                 remote_url,
                             };
 
-                            println!("{:#?}", item);
+                            info!("{:#?}", item);
                             repos.push(item);
                         }
                     }
@@ -50,16 +50,22 @@ fn read_repo_from_dir(dir: &str) -> Vec<SyncItem> {
 }
 
 pub fn run(c: &Context) {
-    println!("Syncing...");
+    info!("Syncing...");
     let base_dirs = c.path().get_all_base_dir();
 
     for base_dir in base_dirs {
         let repos = read_repo_from_dir(&base_dir);
         for repo in repos {
-            println!("Syncing {:?}", repo);
-            c.storage().record_item(&base_dir, &repo.remote_url, &repo.host, &repo.repo, &repo.owner);
+            info!("Syncing {:?}", repo);
+            c.storage().record_item(
+                &base_dir,
+                &repo.remote_url,
+                &repo.host,
+                &repo.repo,
+                &repo.owner,
+            );
         }
     }
 
-    println!("Synced");
+    info!("Synced");
 }

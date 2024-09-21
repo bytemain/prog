@@ -12,10 +12,8 @@ pub fn join_home_dir(path: &str) -> PathBuf {
     home_dir
 }
 
-
 pub fn get_config_path(file: &str) -> PathBuf {
     let mut config_dir = join_home_dir(".prog");
     config_dir.push(file);
     config_dir
 }
-

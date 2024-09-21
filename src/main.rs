@@ -5,6 +5,7 @@ mod context;
 mod helpers;
 
 use config::Config;
+use std::io;
 
 use ansi_term::Colour::Red;
 
@@ -12,7 +13,10 @@ use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::process::exit;
 
-use clap::Parser;
+use crate::commands::constants::ECommands;
+use clap::{Args, Command, CommandFactory, Parser, Subcommand, ValueHint};
+use clap_complete::{generate, Generator, Shell};
+use log::{debug, error};
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
@@ -21,10 +25,14 @@ struct Cli {
     config: Option<PathBuf>,
 
     #[command(subcommand)]
-    command: Option<commands::constants::ECommands>,
+    command: Option<ECommands>,
 
     #[clap(flatten)]
     verbose: clap_verbosity_flag::Verbosity,
+}
+
+fn print_completions<G: Generator>(gen: G, cmd: &mut Command) {
+    generate(gen, cmd, cmd.get_name().to_string(), &mut io::stdout());
 }
 
 fn main() {
@@ -33,7 +41,7 @@ fn main() {
     let mut config_file_path = helpers::path::get_config_path(constants::CONFIG_TOML_FILE);
 
     if let Some(config_path) = cli.config.as_deref() {
-        println!("Value for config: {}", config_path.display());
+        debug!("Value for config: {}", config_path.display());
         config_file_path = config_path.to_path_buf();
     }
 
@@ -41,7 +49,7 @@ fn main() {
 
     let config_path = Path::new(&config_file_path);
     if !config_path.exists() {
-        print!("Could not find config file at {}, create default", config_file_path_str);
+        error!("Could not find config file at {}, create default", config_file_path_str);
         let config_dir = config_path.parent().unwrap();
         if !config_dir.exists() {
             match std::fs::create_dir_all(config_dir) {
@@ -72,13 +80,10 @@ fn main() {
         .unwrap();
 
     let config = config_builder.try_deserialize::<configuration::Config>().unwrap();
-    println!("{:?}", config);
+    debug!("{:?}", config);
 
     if config.base.len() == 0 {
-        println!(
-            "No base path found, please add one to your config file: {}",
-            config_file_path_str
-        );
+        error!("No base path found, please add one to your config file: {}", config_file_path_str);
         exit(1)
     }
 
@@ -86,31 +91,29 @@ fn main() {
 
     let mut not_match = false;
     match &cli.command {
-        Some(commands::constants::ECommands::Clone { url, rest }) => {
-            println!("Clone command given");
-            commands::clone::run(&mut context, &url, &rest)
+        Some(ECommands::Clone { url, rest }) => commands::clone::run(&mut context, &url, &rest),
+        Some(ECommands::Find { keyword }) => commands::find::run(&context, &keyword),
+        Some(ECommands::Sync) => commands::sync::run(&context),
+        Some(ECommands::Completion { shell }) => {
+            let mut cmd = Cli::command();
+            error!("Generating completion file for {shell:?}...");
+            print_completions(*shell, &mut cmd);
+            return;
         }
-        Some(commands::constants::ECommands::Find { keyword }) => {
-            println!("Query command given");
-            commands::find::run(&context, &keyword)
-        }
-        Some(commands::constants::ECommands::Sync) => {
-            println!("Sync command given");
-            commands::sync::run(&context)
-        }
+
         None => {
-            println!("{}", Red.paint("No command given"));
+            // fallback
+            // 1. 查询用户输入的是否为 github.com 等或者 为某个 alias
+
+            // 2. 查询用户输入的是否为某个用户
             not_match = true
         }
     }
 
     // 如果已经匹配到了命令，就不需要进行后面的 fallback 逻辑了
     if !not_match {
+        let mut cmd = Cli::command();
+        cmd.print_help();
         exit(0)
     }
-
-    // fallback
-    // 1. 查询用户输入的是否为 github.com 等或者 为某个 alias
-
-    // 2. 查询用户输入的是否为某个用户
 }
