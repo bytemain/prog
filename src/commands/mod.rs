@@ -1,4 +1,4 @@
 pub mod clone;
-pub mod query;
+pub mod find;
 
 pub mod constants;

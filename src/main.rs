@@ -63,7 +63,6 @@ fn main() {
         }
     }
 
-    println!("Final Path: {:?}", config_file_path);
     let config_builder = Config::builder()
         .add_source(config::File::with_name(config_file_path_str))
         // Add in settings from the environment (with a prefix of APP)
@@ -91,9 +90,9 @@ fn main() {
             println!("Clone command given");
             commands::clone::run(&mut context, &url, &rest)
         }
-        Some(commands::constants::ECommands::Query { keyword }) => {
+        Some(commands::constants::ECommands::Find { keyword }) => {
             println!("Query command given");
-            commands::query::run(&context, &keyword)
+            commands::find::run(&context, &keyword)
         }
         None => {
             println!("{}", Red.paint("No command given"));

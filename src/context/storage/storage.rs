@@ -1,7 +1,7 @@
 use crate::context::storage::migrations::MIGRATIONS;
 use crate::{constants, helpers};
 use git_url_parse::GitUrl;
-use rusqlite::{params, Connection};
+use rusqlite::{named_params, params, Connection};
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Serialize, Deserialize, PartialEq, Debug)]
@@ -18,6 +18,12 @@ struct Record {
     base_dir: String,
     /// user original input
     remote_url: String,
+}
+
+impl Record {
+    pub fn fs_path(&self) -> String {
+        format!("{}/{}/{}", self.base_dir, self.owner, self.repo)
+    }
 }
 
 pub struct Storage {
@@ -50,17 +56,36 @@ impl Storage {
             remote_url: remote_url.to_string(),
         };
 
-        let mut stmt = self.conn.prepare("INSERT INTO repos (created_at, updated_at, host, repo, owner, base_dir, remote_url) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)").unwrap();
-        stmt.execute(params![
-            &record.created_at,
-            &record.updated_at,
-            &record.host,
-            &record.repo,
-            &record.owner,
-            &record.base_dir,
-            &record.remote_url,
+        let mut stmt = self.conn.prepare("INSERT INTO repos (created_at, updated_at, host, repo, owner, base_dir, remote_url) VALUES (:created_at, :updated_at, :host, :repo, :owner, :base_dir, :remote_url)").unwrap();
+        stmt.execute(named_params![
+            ":created_at": &record.created_at,
+            ":updated_at": &record.updated_at,
+            ":host": &record.host,
+            ":repo": &record.repo,
+            ":owner": &record.owner,
+            ":base_dir": &record.base_dir,
+            ":remote_url": &record.remote_url,
         ])
         .unwrap();
+    }
+
+    pub fn find(&self, keyword: &str) {
+        let mut stmt = self.conn.prepare("SELECT * FROM repos WHERE host LIKE ?1 OR repo LIKE ?1 OR owner LIKE ?1 OR base_dir LIKE ?1 OR remote_url LIKE ?1").unwrap();
+        let mut rows = stmt.query(params![keyword]).unwrap();
+
+        while let Some(row) = rows.next().unwrap() {
+            let record = Record {
+                created_at: row.get("created_at").unwrap(),
+                updated_at: row.get("updated_at").unwrap(),
+                host: row.get("host").unwrap(),
+                repo: row.get("repo").unwrap(),
+                owner: row.get("owner").unwrap(),
+                base_dir: row.get("base_dir").unwrap(),
+                remote_url: row.get("remote_url").unwrap(),
+            };
+            println!("{:?}", record);
+            println!("Path: {}", record.fs_path());
+        }
     }
 
     fn setup_database(&mut self) {
