@@ -50,7 +50,7 @@ impl Storage {
             remote_url: remote_url.to_string(),
         };
 
-        let mut stmt = self.conn.prepare("INSERT INTO record (created_at, updated_at, host, repo, owner, base_dir, remote_url) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)").unwrap();
+        let mut stmt = self.conn.prepare("INSERT INTO repos (created_at, updated_at, host, repo, owner, base_dir, remote_url) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)").unwrap();
         stmt.execute(params![
             &record.created_at,
             &record.updated_at,

@@ -1,12 +1,10 @@
-use lazy_static::lazy_static;
 use rusqlite_migration::{Migrations, M};
+use std::cell::LazyCell;
 
 // Define migrations. These are applied atomically.
-lazy_static! {
-    static ref MIGRATIONS: Migrations<'static> = Migrations::new(vec![M::up(include_str!(
-        "./sql_migrations/202409211652_create_record.sql"
-    )),]);
-}
+pub const MIGRATIONS: LazyCell<Migrations> = LazyCell::new(|| {
+    Migrations::new(vec![M::up(include_str!("./sql_migrations/202409211652_create_record.sql"))])
+});
 
 #[cfg(test)]
 mod tests {
