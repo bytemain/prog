@@ -94,6 +94,10 @@ fn main() {
             println!("Query command given");
             commands::find::run(&context, &keyword)
         }
+        Some(commands::constants::ECommands::Sync) => {
+            println!("Sync command given");
+            commands::sync::run(&context)
+        }
         None => {
             println!("{}", Red.paint("No command given"));
             not_match = true
