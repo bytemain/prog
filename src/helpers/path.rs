@@ -5,10 +5,10 @@ use directories::BaseDirs;
 
 use std::cell::LazyCell;
 
-const base_dirs: LazyCell<BaseDirs> = LazyCell::new(|| BaseDirs::new().unwrap());
+const BASE_DIRS: LazyCell<BaseDirs> = LazyCell::new(|| BaseDirs::new().unwrap());
 
 pub fn join_home_dir(path: &str) -> PathBuf {
-    let mut home_dir = base_dirs.home_dir().to_owned();
+    let mut home_dir = BASE_DIRS.home_dir().to_owned();
     home_dir.push(path);
     home_dir
 }

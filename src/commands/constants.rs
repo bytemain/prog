@@ -8,7 +8,7 @@ pub enum ECommands {
         #[arg(allow_hyphen_values = true)]
         rest: Vec<String>,
     },
-    Query {
+    Find {
         keyword: String,
     },
 }
