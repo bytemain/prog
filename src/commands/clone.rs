@@ -1,8 +1,9 @@
 use std::path::Path;
 
 use crate::context::Context;
+use clipboard_rs::{Clipboard, ClipboardContent, ClipboardContext, ContentFormat};
 use git_url_parse::GitUrl;
-use log::debug;
+use log::{debug, info};
 
 pub fn run(c: &Context, url: &String, rest: &Vec<String>) {
     let base_dir = c.path().get_base_dir(url).unwrap();
@@ -29,4 +30,11 @@ pub fn run(c: &Context, url: &String, rest: &Vec<String>) {
 
     crate::helpers::shell::clone(&url, &rest, &target_path).unwrap();
     c.storage().record_item(&base_dir, &url, &host, &name, &owner);
+
+    let ctx = ClipboardContext::new().unwrap();
+    ctx.set(vec![ClipboardContent::Text(format!("cd {}", target_path))])
+        .expect("Failed to set clipboard content");
+
+    println!("Cloned to: {}", target_path);
+    println!("📋 Copied to clipboard, you can paste it now");
 }

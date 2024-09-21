@@ -1,6 +1,6 @@
 use crate::context::storage::migrations::MIGRATIONS;
 use crate::{constants, helpers};
-use log::debug;
+use log::{debug, info};
 use rusqlite::{named_params, params, Connection};
 use serde::{Deserialize, Serialize};
 
@@ -77,6 +77,7 @@ impl Storage {
     }
 
     pub fn find(&self, keyword: &str) {
+        println!("Searching for: {}", keyword);
         let mut stmt = self.conn.prepare("SELECT * FROM repos WHERE host LIKE ?1 OR repo LIKE ?1 OR owner LIKE ?1 OR base_dir LIKE ?1 OR remote_url LIKE ?1").unwrap();
         let mut rows = stmt.query(params![keyword]).unwrap();
 
