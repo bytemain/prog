@@ -1,8 +1,9 @@
+use log::info;
 use std::io::{BufRead, BufReader, Error, ErrorKind};
 use std::process::{Command, Stdio};
 
 fn run(cmd: String) -> anyhow::Result<()> {
-    println!("[RUN] {}", cmd);
+    info!("Running {}", cmd);
 
     let child = Command::new("bash")
         .arg("-c")
@@ -17,7 +18,7 @@ fn run(cmd: String) -> anyhow::Result<()> {
 
     let reader = BufReader::new(output);
 
-    reader.lines().filter_map(|line| line.ok()).for_each(|line| println!("{}", line));
+    reader.lines().filter_map(|line| line.ok()).for_each(|line| info!("{}", line));
 
     Ok(())
 }

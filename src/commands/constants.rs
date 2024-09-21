@@ -1,4 +1,5 @@
 use clap::Subcommand;
+use clap_complete::Shell;
 
 #[derive(Subcommand, Debug)]
 pub enum ECommands {
@@ -12,4 +13,7 @@ pub enum ECommands {
         keyword: String,
     },
     Sync,
+    Completion {
+        shell: Shell,
+    },
 }

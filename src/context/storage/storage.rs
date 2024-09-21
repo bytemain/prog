@@ -1,5 +1,6 @@
 use crate::context::storage::migrations::MIGRATIONS;
 use crate::{constants, helpers};
+use log::debug;
 use rusqlite::{named_params, params, Connection};
 use serde::{Deserialize, Serialize};
 
@@ -79,7 +80,6 @@ impl Storage {
         let mut stmt = self.conn.prepare("SELECT * FROM repos WHERE host LIKE ?1 OR repo LIKE ?1 OR owner LIKE ?1 OR base_dir LIKE ?1 OR remote_url LIKE ?1").unwrap();
         let mut rows = stmt.query(params![keyword]).unwrap();
 
-
         while let Some(row) = rows.next().unwrap() {
             let record = Record {
                 created_at: row.get("created_at").unwrap(),
@@ -90,8 +90,8 @@ impl Storage {
                 base_dir: &row.get::<_, String>("base_dir").unwrap(),
                 remote_url: &row.get::<_, String>("remote_url").unwrap(),
             };
-            println!("{:?}", record);
-            println!("Path: {}", record.fs_path());
+            debug!("{:?}", record);
+            debug!("Path: {}", record.fs_path());
         }
     }
 
