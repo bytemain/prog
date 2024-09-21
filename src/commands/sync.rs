@@ -8,7 +8,6 @@ pub struct SyncItem {
     pub host: String,
     pub repo: String,
     pub owner: String,
-    pub full_path: String,
     pub remote_url: String,
 }
 
@@ -34,7 +33,6 @@ fn read_repo_from_dir(dir: &str) -> Vec<SyncItem> {
                                 host: path.file_name().unwrap().to_string_lossy().to_string(),
                                 repo: repo.file_name().unwrap().to_string_lossy().to_string(),
                                 owner: owner.file_name().unwrap().to_string_lossy().to_string(),
-                                full_path,
                                 remote_url,
                             };
 
