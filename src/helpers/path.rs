@@ -1,14 +1,13 @@
-use std::env;
 use std::path::PathBuf;
 
-use directories::BaseDirs;
+use dirs::home_dir;
 
 use std::cell::LazyCell;
 
-const BASE_DIRS: LazyCell<BaseDirs> = LazyCell::new(|| BaseDirs::new().unwrap());
+const HOME_PATH: LazyCell<PathBuf> = LazyCell::new(|| home_dir().unwrap());
 
 pub fn join_home_dir(path: &str) -> PathBuf {
-    let mut home_dir = BASE_DIRS.home_dir().to_owned();
+    let mut home_dir = HOME_PATH.clone();
     home_dir.push(path);
     home_dir
 }
@@ -19,3 +18,4 @@ pub fn get_config_path(file: &str) -> PathBuf {
     config_dir.push(file);
     config_dir
 }
+

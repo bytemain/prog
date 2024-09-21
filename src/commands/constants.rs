@@ -1,4 +1,4 @@
-use clap::{Parser, Subcommand};
+use clap::Subcommand;
 
 #[derive(Subcommand, Debug)]
 pub enum ECommands {
@@ -11,4 +11,5 @@ pub enum ECommands {
     Find {
         keyword: String,
     },
+    Sync,
 }

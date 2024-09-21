@@ -733,10 +733,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "directories"
+name = "dirs"
 version = "5.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9a49173b84e034382284f27f1af4dcbbd231ffa358c0fe316541a7337f376a35"
+checksum = "44c45a9d03d6676652bcb5e724c7e988de1acad23a711b5217ab9cbecbec2225"
 dependencies = [
  "dirs-sys",
 ]
@@ -1775,7 +1775,7 @@ dependencies = [
  "clap",
  "clap-verbosity-flag",
  "config",
- "directories",
+ "dirs",
  "git-url-parse",
  "git2",
  "indoc",
@@ -1783,6 +1783,7 @@ dependencies = [
  "rusqlite",
  "rusqlite_migration",
  "serde",
+ "shellexpand",
  "tonbo",
  "url",
 ]
@@ -2032,6 +2033,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "900fba806f70c630b0a382d0d825e17a0f19fcd059a2ade1ff237bcddf446b31"
 dependencies = [
  "lazy_static",
+]
+
+[[package]]
+name = "shellexpand"
+version = "3.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "da03fa3b94cc19e3ebfc88c4229c49d8f08cdbd1228870a45f0ffdf84988e14b"
+dependencies = [
+ "dirs",
 ]
 
 [[package]]
