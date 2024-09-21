@@ -41,10 +41,7 @@ fn main() {
 
     let config_path = Path::new(&config_file_path);
     if !config_path.exists() {
-        print!(
-            "Could not find config file at {}, create default",
-            config_file_path_str
-        );
+        print!("Could not find config file at {}, create default", config_file_path_str);
         let config_dir = config_path.parent().unwrap();
         if !config_dir.exists() {
             match std::fs::create_dir_all(config_dir) {
@@ -75,9 +72,7 @@ fn main() {
         .build()
         .unwrap();
 
-    let config = config_builder
-        .try_deserialize::<configuration::Config>()
-        .unwrap();
+    let config = config_builder.try_deserialize::<configuration::Config>().unwrap();
     println!("{:?}", config);
 
     if config.base.len() == 0 {

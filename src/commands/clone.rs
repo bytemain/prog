@@ -21,9 +21,8 @@ pub fn run(c: &Context, url: &String, rest: &Vec<String>) {
     let full_path = Path::new(&base_dir).join(host).join(path);
 
     println!("target full path: {}", full_path.to_str().unwrap());
-    let target_path = full_path
-        .to_str()
-        .expect(format!("Cannot construct full path for {}", url).as_str());
+    let target_path =
+        full_path.to_str().expect(format!("Cannot construct full path for {}", url).as_str());
 
     crate::helpers::shell::clone(&url, &rest, &target_path).unwrap();
     c.storage().record_item(&base_dir, &url, &url_parsed);

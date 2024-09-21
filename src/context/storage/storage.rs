@@ -1,8 +1,8 @@
+use crate::context::storage::migrations::MIGRATIONS;
+use crate::{constants, helpers};
 use git_url_parse::GitUrl;
 use rusqlite::{params, Connection};
 use serde::{Deserialize, Serialize};
-use crate::{constants, helpers};
-use crate::context::storage::migrations::MIGRATIONS;
 
 #[derive(Clone, Serialize, Deserialize, PartialEq, Debug)]
 struct Record {
@@ -34,7 +34,7 @@ impl Storage {
                 let mut storage = Self { conn };
                 storage.setup_database();
                 storage
-            },
+            }
             Err(e) => panic!("Could not open database: {}", e),
         }
     }
@@ -59,7 +59,8 @@ impl Storage {
             &record.owner,
             &record.base_dir,
             &record.remote_url,
-        ]).unwrap();
+        ])
+        .unwrap();
     }
 
     fn setup_database(&mut self) {

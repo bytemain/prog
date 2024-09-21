@@ -18,9 +18,7 @@ impl<'a> Path<'a> {
         if self.config.base.len() == 0 {
             bail!(
                 "please configure base dir in : {}",
-                helpers::path::get_config_path(constants::CONFIG_TOML_FILE)
-                    .to_str()
-                    .unwrap()
+                helpers::path::get_config_path(constants::CONFIG_TOML_FILE).to_str().unwrap()
             );
         }
 

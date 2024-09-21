@@ -17,11 +17,7 @@ impl<'a> Context<'a> {
     pub fn new(config: &'a configuration::Config) -> Self {
         let path = RefCell::new(path::Path::new(config));
         let storage = RefCell::new(storage::Storage::new());
-        Self {
-            config,
-            path,
-            storage,
-        }
+        Self { config, path, storage }
     }
 
     #[inline]
