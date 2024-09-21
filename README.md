@@ -10,4 +10,4 @@
 - [] support `remove` command
 - [] support `run` command
 - [] support `runall` command
-- [] support `sync` command
+- [x] support `sync` command
