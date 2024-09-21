@@ -6,7 +6,7 @@ use git_url_parse::GitUrl;
 use log::{debug, info};
 
 pub fn run(c: &Context, url: &String, rest: &Vec<String>) {
-    let base_dir = c.path().get_base_dir(url).unwrap();
+    let base_dir = c.config().get_base_dir(url).unwrap();
 
     let url_parsed = GitUrl::parse(&url).unwrap();
     debug!("info: {:#?}", url_parsed);

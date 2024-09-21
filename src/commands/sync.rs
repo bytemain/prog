@@ -51,7 +51,7 @@ fn read_repo_from_dir(dir: &str) -> Vec<SyncItem> {
 
 pub fn run(c: &Context) {
     info!("Syncing...");
-    let base_dirs = c.path().get_all_base_dir();
+    let base_dirs = c.config().get_all_base_dir();
 
     for base_dir in base_dirs {
         let repos = read_repo_from_dir(&base_dir);
