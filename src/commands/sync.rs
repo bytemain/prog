@@ -8,7 +8,6 @@ pub struct SyncItem {
     pub host: String,
     pub repo: String,
     pub owner: String,
-    pub full_path: String,
     pub remote_url: String,
 }
 
@@ -34,7 +33,6 @@ fn read_repo_from_dir(dir: &str) -> Vec<SyncItem> {
                                 host: path.file_name().unwrap().to_string_lossy().to_string(),
                                 repo: repo.file_name().unwrap().to_string_lossy().to_string(),
                                 owner: owner.file_name().unwrap().to_string_lossy().to_string(),
-                                full_path,
                                 remote_url,
                             };
 
@@ -51,7 +49,7 @@ fn read_repo_from_dir(dir: &str) -> Vec<SyncItem> {
 
 pub fn run(c: &Context) {
     info!("Syncing...");
-    let base_dirs = c.path().get_all_base_dir();
+    let base_dirs = c.config().get_all_base_dir();
 
     for base_dir in base_dirs {
         let repos = read_repo_from_dir(&base_dir);

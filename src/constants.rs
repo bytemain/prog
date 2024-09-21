@@ -7,8 +7,8 @@ base = [
 
 [alias]
 "github://" = "https://github.com/"
-# "gitlab://" = "https://gitlab.com/"
-# "bitbucket://" = "https://bitbucket.org/"
+"gitlab://" = "https://gitlab.com/"
+"bitbucket://" = "https://bitbucket.org/"
 
 "#
 };
