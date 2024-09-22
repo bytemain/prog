@@ -1,5 +1,5 @@
 use crate::context::Context;
-use crate::helpers::git::url::get_remote_url;
+use crate::helpers::git::get_remote_url;
 use log::info;
 use std::fs::read_dir;
 

@@ -1,5 +1,6 @@
 use crate::{constants, helpers};
 use anyhow::bail;
+use log::debug;
 use serde::Deserialize;
 use std::collections::HashMap;
 
@@ -32,5 +33,16 @@ impl Config {
         }
 
         base_dirs
+    }
+
+    pub fn replace_alias(&self, url: String) -> String {
+        for (key, value) in &self.alias {
+            if url.starts_with(key) {
+                debug!("Replace alias: {} -> {}", key, value);
+                let result = format!("{}{}", value, &url[key.len()..]);
+                return result;
+            }
+        }
+        url
     }
 }
