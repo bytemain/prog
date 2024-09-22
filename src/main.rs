@@ -15,8 +15,30 @@ use std::process::exit;
 
 use clap::{Args, Command, CommandFactory, Parser, Subcommand, ValueHint};
 use clap_complete::{generate, Generator, Shell};
-use commands::constants::ECommands;
 use log::{debug, error, info};
+
+#[derive(Subcommand, Debug)]
+pub enum ECommands {
+    Clone {
+        url: String,
+
+        #[arg(allow_hyphen_values = true)]
+        rest: Vec<String>,
+    },
+    Find {
+        keyword: String,
+    },
+    Sync,
+    Completion {
+        shell: Shell,
+    },
+    Import {
+        path: PathBuf,
+    },
+    Remove {
+        path: PathBuf,
+    },
+}
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None, allow_external_subcommands = true)]
@@ -54,6 +76,8 @@ fn main() {
         Some(ECommands::Clone { url, rest }) => commands::clone::run(&mut context, &url, &rest),
         Some(ECommands::Find { keyword }) => commands::find::run(&context, &keyword),
         Some(ECommands::Sync) => commands::sync::run(&context),
+        Some(ECommands::Import { path }) => commands::import::run(&mut context, path),
+        Some(ECommands::Remove { path }) => commands::remove::run(&mut context, path),
         Some(ECommands::Completion { shell }) => {
             eprintln!("Generating completion file for {shell:?}...");
             let mut cmd = Cli::command();

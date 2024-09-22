@@ -17,3 +17,8 @@ pub fn get_config_path(file: &str) -> PathBuf {
     config_dir.push(file);
     config_dir
 }
+
+pub fn expand_path(path: &str) -> PathBuf {
+    let path = shellexpand::tilde(path).into_owned();
+    PathBuf::from(path)
+}
