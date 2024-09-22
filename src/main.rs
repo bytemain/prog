@@ -5,7 +5,7 @@ mod context;
 mod helpers;
 
 use config::Config;
-use std::io;
+use std::{env, io};
 
 use ansi_term::Colour::Red;
 
@@ -19,7 +19,7 @@ use commands::constants::ECommands;
 use log::{debug, error, info};
 
 #[derive(Parser, Debug)]
-#[command(author, version, about, long_about = None)]
+#[command(author, version, about, long_about = None, allow_external_subcommands = true)]
 struct Cli {
     #[arg(short, long, value_name = "FILE")]
     config: Option<PathBuf>,
@@ -55,17 +55,11 @@ fn main() {
         Some(ECommands::Find { keyword }) => commands::find::run(&context, &keyword),
         Some(ECommands::Sync) => commands::sync::run(&context),
         Some(ECommands::Completion { shell }) => {
+            eprintln!("Generating completion file for {shell:?}...");
             let mut cmd = Cli::command();
-            error!("Generating completion file for {shell:?}...");
             print_completions(shell, &mut cmd);
             return;
         }
-        None => {
-            // fallback
-            // 1. 查询用户输入的是否为 github.com 等或者 为某个 alias
-            // 2. 查询用户输入的是否为某个用户
-            let mut cmd = Cli::command();
-            cmd.print_help().expect("Failed to print help");
-        }
+        None => {}
     }
 }
