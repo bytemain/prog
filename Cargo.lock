@@ -1502,6 +1502,7 @@ dependencies = [
  "rusqlite_migration",
  "serde",
  "shellexpand",
+ "sloughi",
 ]
 
 [[package]]
@@ -1845,6 +1846,11 @@ checksum = "95890f873bec569a0362c235787f3aca6e1e887302ba4840839bcc6459c42da6"
 dependencies = [
  "quote",
 ]
+
+[[package]]
+name = "sloughi"
+version = "0.3.0"
+source = "git+https://github.com/bytemain/sloughi?branch=main#ede231bb3d96fcd29632f7e48e33678164213786"
 
 [[package]]
 name = "smallvec"
