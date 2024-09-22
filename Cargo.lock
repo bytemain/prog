@@ -1502,6 +1502,7 @@ dependencies = [
  "rusqlite_migration",
  "serde",
  "shellexpand",
+ "sloughi",
 ]
 
 [[package]]
@@ -1845,6 +1846,12 @@ checksum = "95890f873bec569a0362c235787f3aca6e1e887302ba4840839bcc6459c42da6"
 dependencies = [
  "quote",
 ]
+
+[[package]]
+name = "sloughi"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0569fee432a4d80dbdcb77b16df865536b49baa45b72fff3ee4b6ea11033bfd0"
 
 [[package]]
 name = "smallvec"
