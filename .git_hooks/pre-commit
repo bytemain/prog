@@ -1,5 +1,5 @@
 #!/bin/sh
 . "$(dirname "$0")/_/sloughi.sh"
 
-echo "Running pre-commit..."
+echo "Running Sloughi pre-commit..."
 cargo fmt
