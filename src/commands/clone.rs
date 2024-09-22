@@ -7,9 +7,14 @@ use log::{debug, info};
 
 pub fn run(c: &Context, url: &String, rest: &Vec<String>) {
     let base_dir = c.config().get_base_dir(url).unwrap();
+    let url = c.config().replace_alias(url.clone());
 
     let url_parsed = GitUrl::parse(&url).unwrap();
     debug!("info: {:#?}", url_parsed);
+    if (url_parsed.host.is_none() || url_parsed.owner.is_none()) {
+        eprintln!("Invalid git url: {}", url);
+        return;
+    }
 
     let host = url_parsed.host.clone().unwrap();
     let owner = url_parsed.owner.clone().unwrap();
@@ -28,7 +33,7 @@ pub fn run(c: &Context, url: &String, rest: &Vec<String>) {
     let target_path =
         full_path.to_str().expect(format!("Cannot construct full path for {}", url).as_str());
 
-    crate::helpers::shell::clone(&url, &rest, &target_path).unwrap();
+    crate::helpers::git::clone(&url, &rest, &target_path).unwrap();
     c.storage().record_item(&base_dir, &url, &host, &name, &owner);
 
     let ctx = ClipboardContext::new().unwrap();
