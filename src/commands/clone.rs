@@ -29,12 +29,17 @@ pub fn run(c: &Context, url: &String, rest: &Vec<String>) {
 
     let full_path = Path::new(&base_dir).join(&host).join(fullname);
 
+    if full_path.exists() {
+        eprintln!("Repo already exists: {}", full_path.to_str().unwrap());
+        return;
+    }
+
     debug!("target full path: {}", full_path.to_str().unwrap());
     let target_path =
         full_path.to_str().expect(format!("Cannot construct full path for {}", url).as_str());
 
     crate::helpers::git::clone(&url, &rest, &target_path).unwrap();
-    c.storage().record_item(&base_dir, &url, &host, &name, &owner);
+    c.storage().record_item(&base_dir, &url, &host, &name, &owner, &target_path);
 
     let ctx = ClipboardContext::new().unwrap();
     ctx.set(vec![ClipboardContent::Text(format!("cd {}", target_path))])

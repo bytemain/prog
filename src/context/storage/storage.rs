@@ -18,6 +18,8 @@ struct Record<'a> {
     base_dir: &'a str,
     /// user original input
     remote_url: &'a str,
+    /// the full path to the repo
+    full_path: &'a str,
 }
 
 impl<'a> Record<'a> {
@@ -52,6 +54,7 @@ impl Storage {
         host: &str,
         repo: &str,
         owner: &str,
+        full_path: &str,
     ) {
         let record = Record {
             created_at: helpers::time::get_current_timestamp(),
@@ -61,9 +64,10 @@ impl Storage {
             owner,
             base_dir,
             remote_url,
+            full_path,
         };
 
-        let mut stmt = self.conn.prepare("INSERT INTO repos (created_at, updated_at, host, repo, owner, base_dir, remote_url) VALUES (:created_at, :updated_at, :host, :repo, :owner, :base_dir, :remote_url)").unwrap();
+        let mut stmt = self.conn.prepare("INSERT INTO repos (created_at, updated_at, host, repo, owner, base_dir, remote_url, full_path) VALUES (:created_at, :updated_at, :host, :repo, :owner, :base_dir, :remote_url, :full_path)").unwrap();
         stmt.execute(named_params![
             ":created_at": &record.created_at,
             ":updated_at": &record.updated_at,
@@ -72,6 +76,7 @@ impl Storage {
             ":owner": &record.owner,
             ":base_dir": &record.base_dir,
             ":remote_url": &record.remote_url,
+            ":full_path": &record.full_path,
         ])
         .unwrap();
     }
@@ -90,10 +95,16 @@ impl Storage {
                 owner: &row.get::<_, String>("owner").unwrap(),
                 base_dir: &row.get::<_, String>("base_dir").unwrap(),
                 remote_url: &row.get::<_, String>("remote_url").unwrap(),
+                full_path: &row.get::<_, String>("full_path").unwrap(),
             };
             debug!("{:?}", record);
             debug!("Path: {}", record.fs_path());
         }
+    }
+
+    pub fn remove(&self, path: &str) {
+        let mut stmt = self.conn.prepare("DELETE FROM repos WHERE full_path = ?1").unwrap();
+        stmt.execute(params![path]).unwrap();
     }
 
     fn setup_database(&mut self) {
