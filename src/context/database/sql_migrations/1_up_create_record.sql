@@ -1,3 +1,4 @@
+--- 2024.09.21 16:52
 --- Create the table for the repos, use sqlite
 --- This table will store the information about the repositories that are being managed by the console
 

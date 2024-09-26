@@ -36,8 +36,8 @@ pub struct Database {
 
 impl Database {
     pub fn new() -> Self {
-        let database_path = constants::DATABASE_FILE.clone();
-        let conn = Connection::open(database_path);
+        let database_path = constants::DATABASE_FOLDER.clone();
+        let conn = Connection::open(database_path.join("db.sqlite3"));
 
         match conn {
             Ok(conn) => {

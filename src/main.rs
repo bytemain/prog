@@ -32,6 +32,7 @@ pub enum ECommands {
     Remove {
         path: PathBuf,
     },
+    Reset,
 }
 
 #[derive(Parser, Debug)]
@@ -68,6 +69,7 @@ fn main() {
         Some(ECommands::Sync) => commands::sync::run(&context),
         Some(ECommands::Import { path }) => commands::import::run(&mut context, path),
         Some(ECommands::Remove { path }) => commands::remove::run(&mut context, path),
+        Some(ECommands::Reset) => commands::reset::run(&mut context),
         Some(ECommands::Completion { shell }) => {
             eprintln!("Generating completion file for {shell:?}...");
             let mut cmd = Cli::command();

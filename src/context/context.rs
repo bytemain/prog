@@ -3,15 +3,15 @@ use crate::context::configuration;
 use crate::context::database;
 use config::Config;
 use log::{debug, error};
-use std::cell::Ref;
 use std::cell::RefCell;
+use std::cell::{LazyCell, Ref};
 use std::io::Write;
 use std::path::PathBuf;
 use std::process::exit;
 
 pub struct Context {
     pub config: RefCell<configuration::Config>,
-    db: RefCell<database::Database>,
+    db: RefCell<LazyCell<database::Database, fn() -> database::Database>>,
 }
 
 impl Context {
@@ -63,19 +63,39 @@ impl Context {
             );
             exit(1)
         }
-        let db = RefCell::new(database::Database::new());
+
+        if !constants::DATABASE_FOLDER.exists() {
+            match std::fs::create_dir_all(constants::DATABASE_FOLDER.clone()) {
+                Ok(_) => {}
+                Err(err) => panic!("Could not create database folder: {}", err),
+            }
+        }
+
+        let db =
+            RefCell::new(LazyCell::<database::Database, fn() -> database::Database>::new(|| {
+                database::Database::new()
+            }));
         let config = RefCell::new(config);
 
         Self { config, db }
     }
 
     #[inline]
-    pub fn database(&self) -> Ref<'_, database::Database> {
+    pub fn database(&self) -> Ref<'_, LazyCell<database::Database>> {
         self.db.borrow()
     }
 
     #[inline]
     pub fn config(&self) -> Ref<'_, configuration::Config> {
         self.config.borrow()
+    }
+
+    #[inline]
+    pub fn delete_db_folder(&self) {
+        let db_file = constants::DATABASE_FOLDER.clone();
+        match std::fs::remove_dir_all(&db_file) {
+            Ok(_) => {}
+            Err(err) => error!("Could not delete db file: {}", err),
+        }
     }
 }
