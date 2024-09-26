@@ -58,6 +58,14 @@ impl Database {
         owner: &str,
         full_path: &str,
     ) {
+        // check if the record already exists
+        let mut stmt = self.conn.prepare("SELECT * FROM repos WHERE full_path = ?1").unwrap();
+        let mut rows = stmt.query(params![full_path]).unwrap();
+        if let Some(_) = rows.next().unwrap() {
+            println!("Project already exists: {}", full_path);
+            return;
+        }
+
         let record = Record {
             created_at: helpers::time::get_current_timestamp(),
             updated_at: helpers::time::get_current_timestamp(),
@@ -106,7 +114,7 @@ impl Database {
             result.push(record);
         }
 
-        return result;
+        result
     }
 
     pub fn remove(&self, path: &str) {
