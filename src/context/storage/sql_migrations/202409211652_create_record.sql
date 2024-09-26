@@ -10,6 +10,6 @@ create table repos
     repo       text                                not null,
     owner      text                                not null,
     remote_url text                                not null,
-    base_dir   text                                not null
+    base_dir   text                                not null,
     full_path  text                                not null
 )

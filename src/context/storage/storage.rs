@@ -1,3 +1,5 @@
+use std::vec;
+
 use crate::context::storage::migrations::MIGRATIONS;
 use crate::{constants, helpers};
 use log::{debug, info};
@@ -5,24 +7,24 @@ use rusqlite::{named_params, params, Connection};
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Serialize, Deserialize, PartialEq, Debug)]
-struct Record<'a> {
+pub struct Record {
     created_at: i64,
     updated_at: i64,
     /// The fully qualified domain name (FQDN) or IP of the repo
-    host: &'a str,
+    host: String,
     /// The name of the repo
-    repo: &'a str,
+    repo: String,
     /// The owner/account/project name
-    owner: &'a str,
+    owner: String,
     /// this repo will be stored in this base dir
-    base_dir: &'a str,
+    base_dir: String,
     /// user original input
-    remote_url: &'a str,
+    remote_url: String,
     /// the full path to the repo
-    full_path: &'a str,
+    full_path: String,
 }
 
-impl<'a> Record<'a> {
+impl Record {
     pub fn fs_path(&self) -> String {
         format!("{}/{}/{}", self.base_dir, self.owner, self.repo)
     }
@@ -59,12 +61,12 @@ impl Storage {
         let record = Record {
             created_at: helpers::time::get_current_timestamp(),
             updated_at: helpers::time::get_current_timestamp(),
-            host,
-            repo,
-            owner,
-            base_dir,
-            remote_url,
-            full_path,
+            host: host.to_string(),
+            repo: repo.to_string(),
+            owner: owner.to_string(),
+            base_dir: base_dir.to_string(),
+            remote_url: remote_url.to_string(),
+            full_path: full_path.to_string(),
         };
 
         let mut stmt = self.conn.prepare("INSERT INTO repos (created_at, updated_at, host, repo, owner, base_dir, remote_url, full_path) VALUES (:created_at, :updated_at, :host, :repo, :owner, :base_dir, :remote_url, :full_path)").unwrap();
@@ -81,25 +83,30 @@ impl Storage {
         .unwrap();
     }
 
-    pub fn find(&self, keyword: &str) {
+    pub fn find(&self, keyword: &str) -> Vec<Record> {
         println!("Searching for: {}", keyword);
         let mut stmt = self.conn.prepare("SELECT * FROM repos WHERE host LIKE ?1 OR repo LIKE ?1 OR owner LIKE ?1 OR base_dir LIKE ?1 OR remote_url LIKE ?1").unwrap();
         let mut rows = stmt.query(params![keyword]).unwrap();
 
+        let mut result = vec![];
         while let Some(row) = rows.next().unwrap() {
             let record = Record {
                 created_at: row.get("created_at").unwrap(),
                 updated_at: row.get("updated_at").unwrap(),
-                host: &row.get::<_, String>("host").unwrap(),
-                repo: &row.get::<_, String>("repo").unwrap(),
-                owner: &row.get::<_, String>("owner").unwrap(),
-                base_dir: &row.get::<_, String>("base_dir").unwrap(),
-                remote_url: &row.get::<_, String>("remote_url").unwrap(),
-                full_path: &row.get::<_, String>("full_path").unwrap(),
+                host: row.get("host").unwrap(),
+                repo: row.get("repo").unwrap(),
+                owner: row.get("owner").unwrap(),
+                base_dir: row.get("base_dir").unwrap(),
+                remote_url: row.get("remote_url").unwrap(),
+                full_path: row.get("full_path").unwrap(),
             };
             debug!("{:?}", record);
             debug!("Path: {}", record.fs_path());
+
+            result.push(record);
         }
+
+        return result;
     }
 
     pub fn remove(&self, path: &str) {

@@ -2,7 +2,6 @@ use super::clone;
 use crate::context::Context;
 use crate::helpers::git::{clone, get_remote_url};
 use crate::helpers::path::expand_path;
-use git_url_parse::GitUrl;
 use log::info;
 use std::path::PathBuf;
 use std::process::exit;

@@ -1,4 +1,3 @@
-use log::info;
 use std::io::{BufRead, BufReader, Error, ErrorKind};
 use std::process::{Command, Stdio};
 
