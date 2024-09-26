@@ -1,4 +1,8 @@
+use std::{cell::LazyCell, path::PathBuf};
+
 use indoc::indoc;
+
+use crate::helpers::path::get_config_path;
 
 pub const DEFAULT_CONFIG_TOML: &str = indoc! {r#"
 base = [
@@ -13,6 +17,5 @@ base = [
 "#
 };
 
-pub const CONFIG_TOML_FILE: &str = "config.toml";
-
-pub const DATABASE_FILE: &str = "db.sqlite3";
+pub const CONFIG_TOML_FILE: LazyCell<PathBuf> = LazyCell::new(|| get_config_path("config.toml"));
+pub const DATABASE_FILE: LazyCell<PathBuf> = LazyCell::new(|| get_config_path("db.sqlite3"));

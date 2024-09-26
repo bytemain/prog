@@ -1,17 +1,16 @@
-use crate::context::storage;
-use crate::helpers::path::get_config_path;
+use crate::context::database;
 use crate::{configuration, constants};
 use config::Config;
 use log::{debug, error};
 use std::cell::Ref;
 use std::cell::RefCell;
 use std::io::Write;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::process::exit;
 
 pub struct Context {
     pub config: RefCell<configuration::Config>,
-    storage: RefCell<storage::Storage>,
+    storage: RefCell<database::Database>,
 }
 
 impl Context {
@@ -58,14 +57,14 @@ impl Context {
             );
             exit(1)
         }
-        let storage = RefCell::new(storage::Storage::new());
+        let storage = RefCell::new(database::Database::new());
         let config = RefCell::new(config);
 
         Self { config, storage }
     }
 
     #[inline]
-    pub fn storage(&self) -> Ref<'_, storage::Storage> {
+    pub fn storage(&self) -> Ref<'_, database::Database> {
         self.storage.borrow()
     }
 

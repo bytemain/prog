@@ -1,6 +1,6 @@
 use std::vec;
 
-use crate::context::storage::migrations::MIGRATIONS;
+use crate::context::database::migrations::MIGRATIONS;
 use crate::{constants, helpers};
 use log::{debug, info};
 use rusqlite::{named_params, params, Connection};
@@ -30,20 +30,20 @@ impl Record {
     }
 }
 
-pub struct Storage {
+pub struct Database {
     conn: Connection,
 }
 
-impl Storage {
+impl Database {
     pub fn new() -> Self {
-        let database_path = helpers::path::get_config_path(constants::DATABASE_FILE);
+        let database_path = constants::DATABASE_FILE.clone();
         let conn = Connection::open(database_path);
 
         match conn {
             Ok(conn) => {
-                let mut storage = Self { conn };
-                storage.setup_database();
-                storage
+                let mut db = Self { conn };
+                db.setup_database();
+                db
             }
             Err(e) => panic!("Could not open database: {}", e),
         }

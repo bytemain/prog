@@ -64,7 +64,7 @@ fn main() {
         .filter_level(cli.verbose.log_level_filter())
         .init();
 
-    let mut config_file_path = helpers::path::get_config_path(constants::CONFIG_TOML_FILE);
+    let mut config_file_path = constants::CONFIG_TOML_FILE.clone();
     if let Some(config_path) = cli.config.as_deref() {
         info!("Use specific config: {}", config_path.display());
         config_file_path = config_path.to_path_buf();

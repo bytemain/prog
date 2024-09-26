@@ -1,7 +1,6 @@
 use std::path::Path;
 
 use crate::{context::Context, helpers::platform};
-use clipboard_rs::{Clipboard, ClipboardContent, ClipboardContext, ContentFormat};
 use git_url_parse::GitUrl;
 use log::{debug, info};
 
