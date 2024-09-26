@@ -1,3 +1,4 @@
+mod configuration;
 mod context;
 mod database;
 

@@ -1,6 +1,6 @@
-use crate::{constants, helpers};
+use crate::constants;
 use anyhow::bail;
-use log::debug;
+use log::info;
 use serde::Deserialize;
 use std::collections::HashMap;
 
@@ -13,7 +13,7 @@ pub struct Config {
 }
 
 impl Config {
-    pub fn get_base_dir(&self, uri: &String) -> anyhow::Result<String> {
+    pub fn get_base_dir(&self) -> anyhow::Result<String> {
         let base_dirs = self.get_all_base_dir();
         if base_dirs.len() == 0 {
             bail!(
@@ -22,7 +22,11 @@ impl Config {
             );
         }
 
-        anyhow::Ok(base_dirs.get(0).unwrap().clone())
+        if base_dirs.len() == 1 {
+            return anyhow::Ok(base_dirs.get(0).unwrap().clone());
+        }
+
+        bail!("Not implemented multiple base dir yet");
     }
 
     pub fn get_all_base_dir(&self) -> Vec<String> {
@@ -38,9 +42,8 @@ impl Config {
     pub fn replace_alias(&self, url: String) -> String {
         for (key, value) in &self.alias {
             if url.starts_with(key) {
-                debug!("Replace alias: {} -> {}", key, value);
-                let result = format!("{}{}", value, &url[key.len()..]);
-                return result;
+                info!("Replace alias: {} -> {}", key, value);
+                return format!("{}{}", value, &url[key.len()..]);
             }
         }
         url

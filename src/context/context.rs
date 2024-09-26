@@ -1,5 +1,6 @@
+use crate::constants;
+use crate::context::configuration;
 use crate::context::database;
-use crate::{configuration, constants};
 use config::Config;
 use log::{debug, error};
 use std::cell::Ref;
@@ -10,14 +11,18 @@ use std::process::exit;
 
 pub struct Context {
     pub config: RefCell<configuration::Config>,
-    storage: RefCell<database::Database>,
+    db: RefCell<database::Database>,
 }
 
 impl Context {
     #[inline]
     pub fn new(config_file_path: PathBuf) -> Self {
         if !config_file_path.exists() {
-            error!("Could not find config file at {}, create default", &config_file_path.display());
+            eprintln!(
+                "Could not find config file at {}, create default",
+                &config_file_path.display()
+            );
+
             let config_dir = config_file_path.parent().unwrap();
             if !config_dir.exists() {
                 match std::fs::create_dir_all(config_dir) {
@@ -31,6 +36,7 @@ impl Context {
                 Ok(file) => file,
                 Err(err) => panic!("Could not create config file: {}", err),
             };
+
             if config_file_path.ends_with(".toml") {
                 match config_file.write_all(constants::DEFAULT_CONFIG_TOML.as_bytes()) {
                     Ok(_) => {}
@@ -51,21 +57,21 @@ impl Context {
         debug!("read config: {:?}", config);
 
         if config.base.len() == 0 {
-            error!(
+            eprintln!(
                 "No base path found, please add one to your config file: {}",
                 config_file_path.display()
             );
             exit(1)
         }
-        let storage = RefCell::new(database::Database::new());
+        let db = RefCell::new(database::Database::new());
         let config = RefCell::new(config);
 
-        Self { config, storage }
+        Self { config, db }
     }
 
     #[inline]
-    pub fn storage(&self) -> Ref<'_, database::Database> {
-        self.storage.borrow()
+    pub fn database(&self) -> Ref<'_, database::Database> {
+        self.db.borrow()
     }
 
     #[inline]

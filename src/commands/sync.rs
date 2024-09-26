@@ -57,7 +57,7 @@ pub fn run(c: &Context) {
         let repos = read_repo_from_dir(&base_dir);
         for repo in repos {
             info!("Syncing {:?}", repo);
-            c.storage().record_item(
+            c.database().record_item(
                 &base_dir,
                 &repo.remote_url,
                 &repo.host,

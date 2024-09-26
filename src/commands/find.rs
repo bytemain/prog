@@ -1,7 +1,7 @@
 use crate::{context::Context, helpers::platform};
 
 pub fn run(c: &Context, keyword: &str) {
-    let result = c.storage().find(keyword);
+    let result = c.database().find(keyword);
 
     if result.is_empty() {
         println!("No result found");

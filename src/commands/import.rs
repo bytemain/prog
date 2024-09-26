@@ -10,7 +10,7 @@ pub fn run(c: &Context, path: PathBuf) {
     info!("Import: {:?}", path);
     let path = expand_path(path.to_str().unwrap());
     if path.exists() {
-        info!("File exists");
+        info!("path exists, trying to clone");
         let remote_url = get_remote_url(path.to_str().unwrap());
         clone::run(c, &remote_url, &vec![]);
         return;

@@ -1,21 +1,15 @@
 mod commands;
-mod configuration;
 mod constants;
 mod context;
 mod helpers;
 
-use config::Config;
-use std::{env, io};
+use std::io;
 
-use ansi_term::Colour::Red;
+use std::path::PathBuf;
 
-use std::io::Write;
-use std::path::{Path, PathBuf};
-use std::process::exit;
-
-use clap::{Args, Command, CommandFactory, Parser, Subcommand, ValueHint};
+use clap::{Command, CommandFactory, Parser, Subcommand};
 use clap_complete::{generate, Generator, Shell};
-use log::{debug, error, info};
+use log::info;
 
 #[derive(Subcommand, Debug)]
 pub enum ECommands {
@@ -53,10 +47,6 @@ struct Cli {
     verbose: clap_verbosity_flag::Verbosity,
 }
 
-fn print_completions<G: Generator>(gen: G, cmd: &mut Command) {
-    generate(gen, cmd, cmd.get_name().to_string(), &mut io::stdout());
-}
-
 fn main() {
     let cli = Cli::parse();
     env_logger::Builder::new()
@@ -81,8 +71,8 @@ fn main() {
         Some(ECommands::Completion { shell }) => {
             eprintln!("Generating completion file for {shell:?}...");
             let mut cmd = Cli::command();
-            print_completions(shell, &mut cmd);
-            return;
+            let bin_name = &cmd.get_name().to_string();
+            generate(shell, &mut cmd, bin_name, &mut io::stdout());
         }
         None => {}
     }
