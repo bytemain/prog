@@ -4,7 +4,7 @@ use crate::{context::Context, helpers::platform};
 use git_url_parse::GitUrl;
 use log::debug;
 
-pub fn run(c: &Context, url: &String, rest: &Vec<String>) {
+pub fn run(c: &mut Context, url: &String, rest: &Vec<String>) {
     let base_dir = c.config().get_base_dir().unwrap();
     let url = c.config().replace_alias(url.clone());
 
@@ -36,7 +36,7 @@ pub fn run(c: &Context, url: &String, rest: &Vec<String>) {
         full_path.to_str().expect(format!("Cannot construct full path for {}", url).as_str());
 
     crate::helpers::git::clone(&url, &rest, &target_path).unwrap();
-    c.database().record_item(&base_dir, &url, &host, &name, &owner, &target_path);
+    c.database_mut().record_item(&base_dir, &url, &host, &name, &owner, &target_path);
 
     println!("Cloned to: {}", target_path);
     platform::clipboard::copy_path(&target_path);

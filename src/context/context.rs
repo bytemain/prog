@@ -3,15 +3,16 @@ use crate::context::configuration;
 use crate::context::database;
 use config::Config;
 use log::{debug, error};
+use std::cell::Ref;
 use std::cell::RefCell;
-use std::cell::{LazyCell, Ref};
+use std::cell::RefMut;
 use std::io::Write;
 use std::path::PathBuf;
 use std::process::exit;
 
 pub struct Context {
     pub config: RefCell<configuration::Config>,
-    db: RefCell<LazyCell<database::Database, fn() -> database::Database>>,
+    db: RefCell<database::Database>,
 }
 
 impl Context {
@@ -71,18 +72,15 @@ impl Context {
             }
         }
 
-        let db =
-            RefCell::new(LazyCell::<database::Database, fn() -> database::Database>::new(|| {
-                database::Database::new()
-            }));
+        let db = RefCell::new(database::Database::new());
         let config = RefCell::new(config);
 
         Self { config, db }
     }
 
     #[inline]
-    pub fn database(&self) -> Ref<'_, LazyCell<database::Database>> {
-        self.db.borrow()
+    pub fn database_mut(&self) -> RefMut<'_, database::Database> {
+        self.db.borrow_mut()
     }
 
     #[inline]

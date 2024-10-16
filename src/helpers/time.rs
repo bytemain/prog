@@ -1,6 +1,5 @@
-use chrono::Utc;
+use chrono::naive::NaiveDateTime;
 
-pub fn get_current_timestamp() -> i64 {
-    let now = Utc::now();
-    now.timestamp()
+pub fn get_current_timestamp() -> NaiveDateTime {
+    chrono::Utc::now().naive_utc()
 }

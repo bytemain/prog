@@ -25,6 +25,13 @@ clipboard-rs = "0.2.1"
 env_logger = "0.11.5"
 inquire = "0.7.5"
 rand = "0.9.0-alpha.2"
+diesel = { version = "2.2.0", features = [
+    "sqlite",
+    "returning_clauses_for_sqlite_3_35",
+    "chrono",
+    "r2d2",
+] }
+diesel_migrations = { version = "2.2.0", features = ["sqlite"] }
 
 [build-dependencies]
 sloughi = { git = "https://github.com/bytemain/sloughi", branch = "main" }

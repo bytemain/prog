@@ -1,56 +1,32 @@
+use super::models::*;
+use crate::schema::repos::dsl;
+use crate::{constants, helpers, schema::repos};
+use diesel::prelude::*;
+use diesel::{Connection, SqliteConnection};
+use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
+use log::debug;
 use std::vec;
 
-use crate::context::database::migrations::MIGRATIONS;
-use crate::{constants, helpers};
-use log::{debug, info};
-use rusqlite::{named_params, params, Connection};
-use serde::{Deserialize, Serialize};
-
-#[derive(Clone, Serialize, Deserialize, PartialEq, Debug)]
-pub struct Record {
-    created_at: i64,
-    updated_at: i64,
-    /// The fully qualified domain name (FQDN) or IP of the repo
-    host: String,
-    /// The name of the repo
-    repo: String,
-    /// The owner/account/project name
-    owner: String,
-    /// this repo will be stored in this base dir
-    base_dir: String,
-    /// user original input
-    remote_url: String,
-    /// the full path to the repo
-    full_path: String,
-}
-
-impl Record {
-    pub fn fs_path(&self) -> String {
-        format!("{}/{}/{}", self.base_dir, self.owner, self.repo)
-    }
-}
+pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!("migrations");
 
 pub struct Database {
-    conn: Connection,
+    conn: SqliteConnection,
 }
 
 impl Database {
     pub fn new() -> Self {
         let database_path = constants::DATABASE_FOLDER.clone();
-        let conn = Connection::open(database_path.join("db.sqlite3"));
+        let database_url = database_path.join("db.sqlite3").to_string_lossy().to_string();
+        let conn = SqliteConnection::establish(&database_url)
+            .unwrap_or_else(|_| panic!("Error connecting to {}", database_url));
+        let mut db = Self { conn };
 
-        match conn {
-            Ok(conn) => {
-                let mut db = Self { conn };
-                db.setup_database();
-                db
-            }
-            Err(e) => panic!("Could not open database: {}", e),
-        }
+        db.setup_database();
+        db
     }
 
     pub fn record_item(
-        &self,
+        &mut self,
         base_dir: &str,
         remote_url: &str,
         host: &str,
@@ -58,74 +34,67 @@ impl Database {
         owner: &str,
         full_path: &str,
     ) {
+        let record_exists =
+            dsl::repos.filter(dsl::full_path.eq(full_path)).first::<Repo>(&mut self.conn);
         // check if the record already exists
-        let mut stmt = self.conn.prepare("SELECT * FROM repos WHERE full_path = ?1").unwrap();
-        let mut rows = stmt.query(params![full_path]).unwrap();
-        if let Some(_) = rows.next().unwrap() {
-            println!("Project already exists: {}", full_path);
+        if let Ok(r) = record_exists {
+            println!("Project already exists: {}", r.fs_path());
             return;
         }
 
-        let record = Record {
+        let record = NewRepo {
             created_at: helpers::time::get_current_timestamp(),
             updated_at: helpers::time::get_current_timestamp(),
-            host: host.to_string(),
-            repo: repo.to_string(),
-            owner: owner.to_string(),
-            base_dir: base_dir.to_string(),
-            remote_url: remote_url.to_string(),
-            full_path: full_path.to_string(),
+            host,
+            repo,
+            owner,
+            base_dir,
+            remote_url,
+            full_path,
         };
 
-        let mut stmt = self.conn.prepare("INSERT INTO repos (created_at, updated_at, host, repo, owner, base_dir, remote_url, full_path) VALUES (:created_at, :updated_at, :host, :repo, :owner, :base_dir, :remote_url, :full_path)").unwrap();
-        stmt.execute(named_params![
-            ":created_at": &record.created_at,
-            ":updated_at": &record.updated_at,
-            ":host": &record.host,
-            ":repo": &record.repo,
-            ":owner": &record.owner,
-            ":base_dir": &record.base_dir,
-            ":remote_url": &record.remote_url,
-            ":full_path": &record.full_path,
-        ])
-        .unwrap();
+        diesel::insert_into(repos::table)
+            .values(&record)
+            .returning(Repo::as_returning())
+            .get_result(&mut self.conn)
+            .expect("Error saving new repo");
     }
 
-    pub fn find(&self, keyword: &str) -> Vec<Record> {
+    pub fn find(&mut self, keyword: &str) -> Vec<Repo> {
         println!("Searching for: {}", keyword);
-        let mut stmt = self.conn.prepare("SELECT * FROM repos WHERE host LIKE ?1 OR repo LIKE ?1 OR owner LIKE ?1 OR base_dir LIKE ?1 OR remote_url LIKE ?1").unwrap();
-        let mut rows = stmt.query(params![keyword]).unwrap();
 
-        let mut result = vec![];
-        while let Some(row) = rows.next().unwrap() {
-            let record = Record {
-                created_at: row.get("created_at").unwrap(),
-                updated_at: row.get("updated_at").unwrap(),
-                host: row.get("host").unwrap(),
-                repo: row.get("repo").unwrap(),
-                owner: row.get("owner").unwrap(),
-                base_dir: row.get("base_dir").unwrap(),
-                remote_url: row.get("remote_url").unwrap(),
-                full_path: row.get("full_path").unwrap(),
-            };
-            debug!("{:?}", record);
-            debug!("Path: {}", record.fs_path());
+        use crate::schema::repos::dsl::*;
 
-            result.push(record);
+        let results = repos
+            .filter(host.like(keyword))
+            .or_filter(repo.like(keyword))
+            .or_filter(owner.like(keyword))
+            .or_filter(base_dir.like(keyword))
+            .or_filter(remote_url.like(keyword))
+            .select(Repo::as_select())
+            .load::<Repo>(&mut self.conn)
+            .unwrap();
+
+        let mut valid_repos = vec![];
+
+        for result in &results {
+            debug!("{:?}", result);
+            debug!("Path: {}", result.fs_path());
+            valid_repos.push(result.clone());
         }
 
-        result
+        valid_repos
     }
 
-    pub fn remove(&self, path: &str) {
-        let mut stmt = self.conn.prepare("DELETE FROM repos WHERE full_path = ?1").unwrap();
-        stmt.execute(params![path]).unwrap();
+    pub fn remove(&mut self, path: &str) {
+        use crate::schema::repos::dsl::*;
+        diesel::delete(repos.filter(full_path.eq(path))).execute(&mut self.conn);
     }
 
     fn setup_database(&mut self) {
-        MIGRATIONS.to_latest(&mut self.conn).unwrap();
+        self.conn.run_pending_migrations(MIGRATIONS);
 
-        self.conn.pragma_update(None, "journal_mode", "WAL").unwrap();
-        self.conn.pragma_update(None, "foreign_keys", "ON").unwrap();
+        // self.conn.pragma_update(None, "journal_mode", "WAL").unwrap();
+        // self.conn.pragma_update(None, "foreign_keys", "ON").unwrap();
     }
 }

@@ -2,6 +2,7 @@ mod commands;
 mod constants;
 mod context;
 mod helpers;
+mod schema;
 
 use std::io;
 

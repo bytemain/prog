@@ -8,7 +8,7 @@ fn handle_result(path: &str) {
 }
 
 pub fn run(c: &Context, keyword: &str) {
-    let result = c.database().find(keyword);
+    let result = c.database_mut().find(keyword);
 
     if result.is_empty() {
         println!("No result found");

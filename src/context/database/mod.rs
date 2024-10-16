@@ -1,4 +1,4 @@
 mod database;
-mod migrations;
+pub mod models;
 
 pub use database::Database;

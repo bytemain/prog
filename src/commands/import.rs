@@ -6,7 +6,7 @@ use log::info;
 use std::path::PathBuf;
 use std::process::exit;
 
-pub fn run(c: &Context, path: PathBuf) {
+pub fn run(c: &mut Context, path: PathBuf) {
     info!("Import: {:?}", path);
     let path = expand_path(path.to_str().unwrap());
     if path.exists() {
