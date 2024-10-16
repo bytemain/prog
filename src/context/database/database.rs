@@ -92,9 +92,17 @@ impl Database {
     }
 
     fn setup_database(&mut self) {
-        self.conn.run_pending_migrations(MIGRATIONS);
+        diesel::sql_query(
+            r#"
+            PRAGMA busy_timeout = 60000;
+			PRAGMA journal_mode = WAL;
+			PRAGMA synchronous = NORMAL;
+			PRAGMA foreign_keys = ON;
+            "#,
+        )
+        .execute(&mut self.conn)
+        .unwrap();
 
-        // self.conn.pragma_update(None, "journal_mode", "WAL").unwrap();
-        // self.conn.pragma_update(None, "foreign_keys", "ON").unwrap();
+        self.conn.run_pending_migrations(MIGRATIONS).unwrap();
     }
 }

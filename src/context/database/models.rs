@@ -17,7 +17,7 @@ pub struct Repo {
 
 impl Repo {
     pub fn fs_path(&self) -> String {
-        format!("{}/{}/{}", self.base_dir, self.owner, self.repo)
+        format!("{}/{}/{}/{}", self.base_dir, self.host, self.owner, self.repo)
     }
 }
 
