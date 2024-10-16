@@ -1,6 +1,6 @@
 use super::models::*;
 use crate::schema::repos::dsl;
-use crate::{constants, helpers, schema::repos};
+use crate::{constants, schema::repos};
 use diesel::prelude::*;
 use diesel::{Connection, SqliteConnection};
 use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
@@ -43,8 +43,8 @@ impl Database {
         }
 
         let record = NewRepo {
-            created_at: helpers::time::get_current_timestamp(),
-            updated_at: helpers::time::get_current_timestamp(),
+            created_at: chrono::Utc::now().naive_utc(),
+            updated_at: chrono::Utc::now().naive_utc(),
             host,
             repo,
             owner,
@@ -95,9 +95,9 @@ impl Database {
         diesel::sql_query(
             r#"
             PRAGMA busy_timeout = 60000;
-			PRAGMA journal_mode = WAL;
-			PRAGMA synchronous = NORMAL;
-			PRAGMA foreign_keys = ON;
+            PRAGMA journal_mode = WAL;
+            PRAGMA synchronous = NORMAL;
+            PRAGMA foreign_keys = ON;
             "#,
         )
         .execute(&mut self.conn)

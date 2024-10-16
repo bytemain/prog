@@ -3,7 +3,7 @@
 ## Command
 
 ```sh
-prog clone https://github.com/bytemain/prog
+prog add https://github.com/bytemain/prog
 ```
 
 ## Configuration

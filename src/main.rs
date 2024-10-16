@@ -14,7 +14,7 @@ use log::info;
 
 #[derive(Subcommand, Debug)]
 pub enum ECommands {
-    Clone {
+    Add {
         url: String,
 
         #[arg(allow_hyphen_values = true)]
@@ -65,7 +65,7 @@ fn main() {
     let mut context = context::Context::new(config_file_path);
 
     match cli.command {
-        Some(ECommands::Clone { url, rest }) => commands::clone::run(&mut context, &url, &rest),
+        Some(ECommands::Add { url, rest }) => commands::clone::run(&mut context, &url, &rest),
         Some(ECommands::Find { keyword }) => commands::find::run(&context, &keyword),
         Some(ECommands::Sync) => commands::sync::run(&context),
         Some(ECommands::Import { path }) => commands::import::run(&mut context, path),
