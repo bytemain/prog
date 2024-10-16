@@ -11,14 +11,11 @@ serde = "1.0.158"
 indoc = "2"
 clap = { version = "4.5.18", features = ["derive"] }
 clap_complete = "4.5.29"
-ansi_term = "0.12.1"
 clap-verbosity-flag = "2.2.1"
 anyhow = "1.0.70"
 git-url-parse = "0.4.4"
 chrono = "0.4.26"
-rusqlite = { version = "0.32.1", features = ["bundled"] }
 dirs = "5.0.1"
-rusqlite_migration = "1.3.0-alpha.1"
 shellexpand = "3.1.0"
 log = "0.4.22"
 clipboard-rs = "0.2.1"
@@ -29,7 +26,6 @@ diesel = { version = "2.2.0", features = [
     "sqlite",
     "returning_clauses_for_sqlite_3_35",
     "chrono",
-    "r2d2",
 ] }
 diesel_migrations = { version = "2.2.0", features = ["sqlite"] }
 
