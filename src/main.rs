@@ -4,6 +4,7 @@ mod context;
 mod helpers;
 mod schema;
 
+use std::env::args;
 use std::io;
 
 use std::path::PathBuf;
@@ -58,6 +59,14 @@ struct Cli {
     verbose: clap_verbosity_flag::Verbosity,
 }
 
+
+fn show_help() {
+    eprintln!("No command provided");
+    let mut cmd = Cli::command();
+    cmd.print_help().expect("Could not print help");
+    std::process::exit(1);
+}
+
 fn main() {
     let cli = Cli::parse();
     env_logger::Builder::new()
@@ -88,10 +97,17 @@ fn main() {
             generate(shell, &mut cmd, bin_name, &mut io::stdout());
         }
         None => {
-            eprintln!("No command provided");
-            let mut cmd = Cli::command();
-            cmd.print_help().expect("Could not print help");
-            std::process::exit(1);
+            // find the first subcommand in database
+            let args_0 = args().nth(1);
+            match args_0 {
+                Some(subcommand) => {
+                    let matched = commands::find::run_from_not_matched(&context, &subcommand);
+                    if !matched {
+                        show_help();
+                    }
+                }
+                None => show_help(),
+            }
         }
     }
 }

@@ -61,8 +61,6 @@ impl Database {
     }
 
     pub fn find(&mut self, keyword: &str) -> Vec<Repo> {
-        println!("Searching for: {}", keyword);
-
         use crate::schema::repos::dsl::*;
 
         let results = repos
