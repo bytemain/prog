@@ -14,26 +14,34 @@ use log::info;
 
 #[derive(Subcommand, Debug)]
 pub enum ECommands {
+    #[command(about = "Add a new repository")]
     Add {
         url: String,
 
         #[arg(allow_hyphen_values = true)]
         rest: Vec<String>,
     },
+    #[command(about = "Find a repository by keyword")]
     Find {
         keyword: String,
     },
+    #[command(about = "Sync repositories")]
     Sync,
+    #[command(about = "Generate shell completion scripts")]
     Completion {
         shell: Shell,
     },
+    #[command(about = "Import repositories from a path")]
     Import {
         path: PathBuf,
     },
+    #[command(about = "Remove a repository by path")]
     Remove {
         path: PathBuf,
     },
+    #[command(about = "Clean up repositories")]
     Clean,
+    #[command(about = "List all repositories")]
     List,
 }
 
