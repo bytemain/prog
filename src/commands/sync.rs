@@ -28,6 +28,12 @@ fn read_repo_from_dir(dir: &str) -> Vec<SyncItem> {
                     for repo in repos_in_origin {
                         let repo = repo.unwrap().path();
                         if repo.is_dir() {
+                            // check if it's a git repo
+                            let git_dir = repo.join(".git");
+                            if !git_dir.exists() {
+                                continue;
+                            }
+
                             let full_path = repo.display().to_string();
                             let remote_url = get_remote_url(&full_path);
                             let item = SyncItem {
