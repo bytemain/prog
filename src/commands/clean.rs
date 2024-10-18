@@ -4,11 +4,12 @@ use inquire::Confirm;
 use rand::Rng;
 
 pub fn run(c: &Context) {
+    println!("This will delete all your repos in database, won't delete your git repos.");
     // generate random 4 number
     let random_number = rand::thread_rng().gen_range(1000..9999);
     let random_number_str: &str = &random_number.to_string();
     let ans = Confirm {
-        message: &format!("You're doing a very dangerous operation, are you sure you want to continue?\nType '{}' or 'no' to continue.", {random_number}),
+        message: &format!("You're doing a very dangerous operation, are you sure you want to continue?\nType {} or no to continue.", {random_number}),
         starting_input: None,
         default: Some(false),
         placeholder: Some(&random_number.to_string()),
@@ -26,7 +27,7 @@ pub fn run(c: &Context) {
                 Err(())
             }
         },
-        error_message: format!("Type with '{}' or 'no'", random_number).into(),
+        error_message: format!("Type with {} or no", random_number).into(),
         default_value_formatter: &|def| match def {
             true => String::from(random_number_str),
             false => String::from("no"),
@@ -36,11 +37,10 @@ pub fn run(c: &Context) {
         .prompt()
         .unwrap();
 
-    println!("Your answer: {ans}");
     if ans {
         c.delete_db_folder();
-        println!("Reset done.");
+        println!("Successfully clean the database.");
     } else {
-        println!("Reset canceled.");
+        println!("Canceled.");
     }
 }

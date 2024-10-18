@@ -91,6 +91,15 @@ impl Database {
         diesel::delete(repos.filter(full_path.eq(path))).execute(&mut self.conn);
     }
 
+    pub fn get_all_items(&mut self) -> Vec<Repo> {
+        use crate::schema::repos::dsl::*;
+
+        repos
+            .select(Repo::as_select())
+            .load::<Repo>(&mut self.conn)
+            .unwrap()
+    }
+
     fn setup_database(&mut self) {
         diesel::sql_query(
             r#"

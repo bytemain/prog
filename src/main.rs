@@ -33,7 +33,8 @@ pub enum ECommands {
     Remove {
         path: PathBuf,
     },
-    Reset,
+    Clean,
+    List,
 }
 
 #[derive(Parser, Debug)]
@@ -70,13 +71,19 @@ fn main() {
         Some(ECommands::Sync) => commands::sync::run(&context),
         Some(ECommands::Import { path }) => commands::import::run(&mut context, path),
         Some(ECommands::Remove { path }) => commands::remove::run(&mut context, path),
-        Some(ECommands::Reset) => commands::reset::run(&mut context),
+        Some(ECommands::Clean) => commands::clean::run(&mut context),
+        Some(ECommands::List) => commands::list::run(&mut context),
         Some(ECommands::Completion { shell }) => {
             eprintln!("Generating completion file for {shell:?}...");
             let mut cmd = Cli::command();
             let bin_name = &cmd.get_name().to_string();
             generate(shell, &mut cmd, bin_name, &mut io::stdout());
         }
-        None => {}
+        None => {
+            eprintln!("No command provided");
+            let mut cmd = Cli::command();
+            cmd.print_help().expect("Could not print help");
+            std::process::exit(1);
+        }
     }
 }

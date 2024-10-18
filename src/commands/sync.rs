@@ -62,7 +62,7 @@ pub fn run(c: &Context) {
     for base_dir in base_dirs {
         let repos = read_repo_from_dir(&base_dir);
         for repo in repos {
-            info!("Syncing {:?}", repo);
+            println!("Syncing {:?}", repo.full_path);
             c.database_mut().record_item(
                 &base_dir,
                 &repo.remote_url,
