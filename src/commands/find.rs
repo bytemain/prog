@@ -66,4 +66,3 @@ pub fn run_from_not_matched(c: &Context, keyword: &str) -> bool {
 
     false
 }
-

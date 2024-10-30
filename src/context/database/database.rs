@@ -63,12 +63,13 @@ impl Database {
     pub fn find(&mut self, keyword: &str) -> Vec<Repo> {
         use crate::schema::repos::dsl::*;
 
+        let keyword = format!("%{}%", keyword);
         let results = repos
-            .filter(host.like(keyword))
-            .or_filter(repo.like(keyword))
-            .or_filter(owner.like(keyword))
-            .or_filter(base_dir.like(keyword))
-            .or_filter(remote_url.like(keyword))
+            .filter(host.like(&keyword))
+            .or_filter(repo.like(&keyword))
+            .or_filter(owner.like(&keyword))
+            .or_filter(base_dir.like(&keyword))
+            .or_filter(remote_url.like(&keyword))
             .select(Repo::as_select())
             .load::<Repo>(&mut self.conn)
             .unwrap();
@@ -92,10 +93,7 @@ impl Database {
     pub fn get_all_items(&mut self) -> Vec<Repo> {
         use crate::schema::repos::dsl::*;
 
-        repos
-            .select(Repo::as_select())
-            .load::<Repo>(&mut self.conn)
-            .unwrap()
+        repos.select(Repo::as_select()).load::<Repo>(&mut self.conn).unwrap()
     }
 
     fn setup_database(&mut self) {
