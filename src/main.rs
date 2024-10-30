@@ -36,6 +36,8 @@ pub enum ECommands {
     Clean,
     #[command(about = "List all repositories")]
     List,
+    #[command(about = "Initialize configuration")]
+    Init,
 }
 
 #[derive(Parser, Debug)]
@@ -81,6 +83,7 @@ fn main() {
         Some(ECommands::Remove { path }) => commands::remove::run(&mut context, path),
         Some(ECommands::Clean) => commands::clean::run(&mut context),
         Some(ECommands::List) => commands::list::run(&mut context),
+        Some(ECommands::Init) => commands::init::run(&mut context),
         Some(ECommands::Completion { shell }) => {
             let mut cmd = Cli::command();
             let bin_name = &cmd.get_name().to_string();
