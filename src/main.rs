@@ -23,23 +23,15 @@ pub enum ECommands {
         rest: Vec<String>,
     },
     #[command(about = "Find a repository by keyword")]
-    Find {
-        keyword: String,
-    },
+    Find { keyword: String },
     #[command(about = "Sync repositories")]
     Sync,
     #[command(about = "Generate shell completion scripts")]
-    Completion {
-        shell: Shell,
-    },
+    Completion { shell: Shell },
     #[command(about = "Import repositories from a path")]
-    Import {
-        path: PathBuf,
-    },
+    Import { path: PathBuf },
     #[command(about = "Remove a repository by path")]
-    Remove {
-        path: PathBuf,
-    },
+    Remove { path: PathBuf },
     #[command(about = "Clean up repositories")]
     Clean,
     #[command(about = "List all repositories")]
@@ -58,7 +50,6 @@ struct Cli {
     #[clap(flatten)]
     verbose: clap_verbosity_flag::Verbosity,
 }
-
 
 fn show_help() {
     eprintln!("No command provided");
@@ -91,7 +82,6 @@ fn main() {
         Some(ECommands::Clean) => commands::clean::run(&mut context),
         Some(ECommands::List) => commands::list::run(&mut context),
         Some(ECommands::Completion { shell }) => {
-            eprintln!("Generating completion file for {shell:?}...");
             let mut cmd = Cli::command();
             let bin_name = &cmd.get_name().to_string();
             generate(shell, &mut cmd, bin_name, &mut io::stdout());
