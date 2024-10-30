@@ -3,12 +3,9 @@ name = "prog"
 version = "0.1.0"
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
-config = "0.14.0"
+config = { version = "0.14.1", features = ["toml"] }
 serde = "1.0.158"
-indoc = "2"
 clap = { version = "4.5.18", features = ["derive"] }
 clap_complete = "4.5.29"
 clap-verbosity-flag = "2.2.1"
