@@ -4,5 +4,5 @@ pub fn clone(url: &String, rest: &Vec<String>, target_path: &str) -> anyhow::Res
     let mut rest_str: Vec<&str> = rest.iter().map(|x| x.as_str()).collect();
     list.append(&mut rest_str);
 
-    crate::helpers::shell::run(list.join(" "))
+    crate::helpers::shell::run(&list.join(" "))
 }

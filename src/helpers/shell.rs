@@ -1,9 +1,7 @@
 use std::io::{BufRead, BufReader, Error, ErrorKind};
 use std::process::{Command, Stdio};
 
-pub(crate) fn run(cmd: String) -> anyhow::Result<()> {
-    println!("Running {}", cmd);
-
+pub(crate) fn run(cmd: &str) -> anyhow::Result<()> {
     let child = Command::new("bash")
         .arg("-c")
         .arg(cmd)

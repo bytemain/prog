@@ -1,4 +1,4 @@
-use super::clone;
+use super::add;
 use crate::context::Context;
 use crate::helpers::git::{clone, get_remote_url};
 use crate::helpers::path::expand_path;
@@ -12,7 +12,7 @@ pub fn run(c: &mut Context, path: PathBuf) {
     if path.exists() {
         info!("path exists, trying to clone");
         let remote_url = get_remote_url(path.to_str().unwrap());
-        clone::run(c, &remote_url, &vec![]);
+        add::run(c, &remote_url, &vec![]);
         return;
     }
 

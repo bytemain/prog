@@ -1,5 +1,5 @@
 pub mod clean;
-pub mod clone;
+pub mod add;
 pub mod find;
 pub mod import;
 pub mod init;
