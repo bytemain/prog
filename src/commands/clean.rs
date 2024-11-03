@@ -1,7 +1,7 @@
 use crate::context::Context;
+use crate::helpers::rand::gen_n_number;
 use inquire::ui::RenderConfig;
 use inquire::Confirm;
-use crate::helpers::rand::gen_n_number;
 
 pub fn run(c: &Context) {
     println!("This will delete all your repos in database, won't delete your git repos.");
@@ -43,4 +43,3 @@ pub fn run(c: &Context) {
         println!("Canceled.");
     }
 }
-

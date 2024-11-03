@@ -1,7 +1,7 @@
 use crate::context::Context;
+use inquire::Confirm;
 use log::info;
 use std::path::{Path, PathBuf};
-use inquire::Confirm;
 
 pub fn run(c: &Context, path: PathBuf) {
     let path_str = shellexpand::tilde(&path.to_str().unwrap()).into_owned();
@@ -23,7 +23,7 @@ pub fn run(c: &Context, path: PathBuf) {
             std::fs::remove_dir_all(&path).expect("Error removing directory");
             c.database_mut().remove(&path_str);
             println!("Repository removed: {:?}", path);
-        },
+        }
         _ => println!("\nCancelled"),
     }
 }

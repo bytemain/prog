@@ -53,9 +53,7 @@ fn show_help() {
 
 fn main() {
     let cli = Cli::parse();
-    env_logger::Builder::new()
-        .format_timestamp(None)
-        .init();
+    env_logger::Builder::new().format_timestamp(None).init();
 
     let mut context = context::Context::new();
 

@@ -1,7 +1,7 @@
-use crate::helpers::path::PROGRAM;
 use crate::constants;
 use crate::context::configuration;
 use crate::context::database;
+use crate::helpers::path::PROGRAM;
 use config::Config;
 use log::{debug, error};
 use std::cell::OnceCell;
