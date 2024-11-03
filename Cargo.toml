@@ -8,7 +8,6 @@ config = { version = "0.14.1", features = ["toml"] }
 serde = "1.0.158"
 clap = { version = "4.5.18", features = ["derive"] }
 clap_complete = "4.5.29"
-clap-verbosity-flag = "2.2.1"
 anyhow = "1.0.70"
 git-url-parse = "0.4.4"
 chrono = "0.4.26"

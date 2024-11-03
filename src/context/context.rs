@@ -18,8 +18,9 @@ pub struct Context {
 
 impl Context {
     #[inline]
-    pub fn new(config_file_path: PathBuf) -> Self {
+    pub fn new() -> Self {
         let db = RefCell::new(database::Database::new());
+        let mut config_file_path = constants::CONFIG_TOML_FILE.clone();
         let config: OnceCell<configuration::Config> = OnceCell::new();
 
         Self { config, db, config_file_path }

@@ -17,7 +17,7 @@ impl Config {
         let base_dirs = self.get_all_base_dir();
         if base_dirs.len() == 0 {
             bail!(
-                "please configure base dir in : {}",
+                "Please configure base dir in : {}",
                 constants::CONFIG_TOML_FILE.to_str().unwrap()
             );
         }
