@@ -1,3 +1,4 @@
+use crate::helpers::path::PROGRAM;
 use crate::constants;
 use crate::context::configuration;
 use crate::context::database;
@@ -35,7 +36,7 @@ impl Context {
             let config_file_path = self.config_file_path.clone();
             if !config_file_path.exists() {
                 eprintln!(
-                    "Could not find config file at {}, you can create one by running `prog init`",
+                    "Could not find config file at {}, you can create one by running `{PROGRAM} init`",
                     &config_file_path.display()
                 );
                 exit(1);

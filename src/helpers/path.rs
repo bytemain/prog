@@ -12,6 +12,7 @@ pub fn join_home_dir(path: &str) -> PathBuf {
     home_dir
 }
 
+pub const PROGRAM: &str = "prog";
 const FOLDER: &str = ".prog";
 
 pub fn get_config_path(file: &str) -> PathBuf {
