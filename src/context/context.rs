@@ -7,6 +7,7 @@ use log::{debug, error};
 use std::cell::OnceCell;
 use std::cell::RefCell;
 use std::cell::RefMut;
+use std::env;
 use std::path::PathBuf;
 use std::process::exit;
 
@@ -20,7 +21,7 @@ impl Context {
     #[inline]
     pub fn new() -> Self {
         let db = RefCell::new(database::Database::new());
-        let mut config_file_path = constants::CONFIG_TOML_FILE.clone();
+        let config_file_path = constants::CONFIG_TOML_FILE.clone();
         let config: OnceCell<configuration::Config> = OnceCell::new();
 
         Self { config, db, config_file_path }
@@ -44,8 +45,13 @@ impl Context {
             }
 
             let s = std::fs::read_to_string(&config_file_path).unwrap();
-            let config: configuration::Config = toml::from_str(&s).unwrap();
+            let mut config: configuration::Config = toml::from_str(&s).unwrap();
             debug!("read config: {:?}", config);
+
+            if config.tmp_dir.len() == 0 {
+                let dir = env::temp_dir();
+                config.tmp_dir = dir.to_string_lossy().to_string();
+            }
 
             if config.base.len() == 0 {
                 eprintln!(

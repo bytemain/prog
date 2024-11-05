@@ -43,6 +43,9 @@ pub enum ECommands {
     List,
     #[command(about = "Initialize configuration")]
     Init,
+
+    #[command(about = "Create a temporary directory")]
+    Cdtmp,
 }
 
 #[derive(Parser, Debug)]
@@ -84,6 +87,7 @@ fn main() {
         Some(ECommands::Clean) => commands::clean::run(&mut context),
         Some(ECommands::List) => commands::list::run(&mut context),
         Some(ECommands::Init) => commands::init::run(&mut context),
+        Some(ECommands::Cdtmp) => commands::cdtmp::run(&mut context),
         Some(ECommands::Shell { shell }) => Cli::activate(shell),
         None => {
             // find the first subcommand in database

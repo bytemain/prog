@@ -1,4 +1,7 @@
-use crate::constants;
+use crate::{
+    constants,
+    helpers::{path::PROGRAM, rand::get_random_string},
+};
 use anyhow::bail;
 use log::info;
 use serde::Deserialize;
@@ -10,6 +13,8 @@ pub struct Config {
     pub base: Vec<String>,
     #[serde(default)]
     pub alias: HashMap<String, String>,
+    #[serde(default)]
+    pub tmp_dir: String,
 }
 
 impl Config {
@@ -47,5 +52,11 @@ impl Config {
             }
         }
         url
+    }
+
+    pub fn create_tmp_dir(&self) -> String {
+        let suffix = get_random_string(6);
+        let tmp_dir = format!("{}/{}-{}", self.tmp_dir, PROGRAM, suffix);
+        shellexpand::tilde(&tmp_dir).to_string()
     }
 }
