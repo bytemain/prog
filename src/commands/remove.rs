@@ -1,15 +1,15 @@
 use crate::context::Context;
+use crossterm::style::Stylize;
 use inquire::Confirm;
-use log::info;
 use std::path::{Path, PathBuf};
 
 pub fn run(c: &Context, path: PathBuf) {
     let path_str = shellexpand::tilde(&path.to_str().unwrap()).into_owned();
-    info!("Remove: {:?}", path_str);
+    println!("Remove: {:?}", path_str);
 
     let path = Path::new(&path_str);
     if !path.exists() {
-        eprintln!("Path not found: {:?}", path);
+        eprintln!("{}", format!("Path not found: {:?}", path).red());
         return;
     }
 

@@ -1,6 +1,7 @@
 use std::path::Path;
 
 use crate::{context::Context, helpers::platform};
+use crossterm::style::Stylize;
 use git_url_parse::GitUrl;
 use log::debug;
 
@@ -12,7 +13,7 @@ pub fn run(c: &mut Context, url: &String, rest: &Vec<String>) {
     debug!("url parsed: {:#?}", url_parsed);
 
     if url_parsed.host.is_none() || url_parsed.owner.is_none() {
-        eprintln!("Invalid git url: {}", url);
+        eprintln!("{}", format!("Invalid git url: {}", url).red());
         return;
     }
 
@@ -26,7 +27,7 @@ pub fn run(c: &mut Context, url: &String, rest: &Vec<String>) {
     let full_path = Path::new(&base_dir).join(&host).join(fullname);
 
     if full_path.exists() {
-        eprintln!("Repo already exists: {}", full_path.display());
+        println!("{}", format!("Repo already exists: {}", full_path.display()).green());
         platform::clipboard::copy_path(full_path.to_str().unwrap());
         return;
     }
@@ -34,11 +35,11 @@ pub fn run(c: &mut Context, url: &String, rest: &Vec<String>) {
     debug!("target full path: {}", full_path.display());
     let target_path =
         full_path.to_str().expect(format!("Cannot construct full path for {}", url).as_str());
-    println!("Add: {}", url);
+    println!("{}", format!("Add: {}", url).green());
 
     crate::helpers::git::clone(&url, &rest, &target_path).unwrap();
     c.database_mut().record_item(&base_dir, &url, &host, &name, &owner, &target_path);
 
-    println!("Cloned to: {}", target_path);
+    println!("{}", format!("Cloned to: {}", target_path).green());
     platform::clipboard::copy_path(&target_path);
 }

@@ -1698,6 +1698,7 @@ dependencies = [
  "clap_complete",
  "clipboard-rs",
  "config",
+ "crossterm",
  "diesel",
  "diesel_migrations",
  "dirs",

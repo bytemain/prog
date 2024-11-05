@@ -10,7 +10,7 @@ use std::io;
 use std::path::PathBuf;
 
 use clap::{CommandFactory, Parser, Subcommand};
-use clap_complete::{generate, Generator, Shell};
+use clap_complete::{generate, Shell};
 
 #[derive(Subcommand, Debug)]
 pub enum ECommands {

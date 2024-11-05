@@ -1,21 +1,13 @@
-use std::io::{BufRead, BufReader, Error, ErrorKind};
 use std::process::{Command, Stdio};
 
 pub(crate) fn run(cmd: &str) -> anyhow::Result<()> {
-    let child = Command::new("bash")
+    let mut child = Command::new("bash")
         .arg("-c")
         .arg(cmd)
-        .stdout(Stdio::piped())
+        .stdout(Stdio::inherit())
         .spawn()
         .expect("Failed to execute command");
 
-    let output = child
-        .stdout
-        .ok_or_else(|| Error::new(ErrorKind::Other, "Could not capture standard output."))?;
-
-    let reader = BufReader::new(output);
-
-    reader.lines().filter_map(|line| line.ok()).for_each(|line| println!("{}", line));
-
+    child.wait().expect("command wasn't running");
     Ok(())
 }
