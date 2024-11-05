@@ -4,7 +4,6 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-config = { version = "0.14.1", features = ["toml"] }
 serde = "1.0.158"
 clap = { version = "4.5.18", features = ["derive"] }
 clap_complete = "4.5.29"
@@ -24,6 +23,7 @@ diesel = { version = "2.2.0", features = [
     "chrono",
 ] }
 diesel_migrations = { version = "2.2.0", features = ["sqlite"] }
+toml = "0.8.19"
 
 [build-dependencies]
 sloughi = { git = "https://github.com/bytemain/sloughi", branch = "main" }

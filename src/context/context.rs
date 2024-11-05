@@ -2,7 +2,7 @@ use crate::constants;
 use crate::context::configuration;
 use crate::context::database;
 use crate::helpers::path::PROGRAM;
-use config::Config;
+use crossterm::style::Stylize;
 use log::{debug, error};
 use std::cell::OnceCell;
 use std::cell::RefCell;
@@ -43,21 +43,15 @@ impl Context {
                 exit(1);
             }
 
-            let config_builder = Config::builder()
-                .add_source(config::File::from(config_file_path.clone()))
-                // Add in settings from the environment (with a prefix of PROG)
-                // Eg.. `PROG_DEBUG=1 ./target/app` would set the `debug` key
-                .add_source(config::Environment::with_prefix("PROG"))
-                .build()
-                .unwrap();
-
-            let config = config_builder.try_deserialize::<configuration::Config>().unwrap();
+            let s = std::fs::read_to_string(&config_file_path).unwrap();
+            let config: configuration::Config = toml::from_str(&s).unwrap();
             debug!("read config: {:?}", config);
 
             if config.base.len() == 0 {
                 eprintln!(
-                    "No base path found, please add one to your config file: {}",
-                    config_file_path.display()
+                    "{}",
+                    format!("No base path found, please add one to your config file: {}",
+                    config_file_path.display()).red()
                 );
                 exit(1);
             }

@@ -53,7 +53,8 @@ fn show_help() {
 
 fn main() {
     let cli = Cli::parse();
-    env_logger::Builder::new().format_timestamp(None).init();
+    // use PROG_LOG="debug" to enable debug logs
+    env_logger::Builder::new().parse_env("PROG_LOG").format_timestamp(None).init();
 
     let mut context = context::Context::new();
 
