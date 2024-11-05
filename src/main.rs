@@ -21,15 +21,22 @@ pub enum ECommands {
         rest: Vec<String>,
     },
     #[command(about = "Find a repository by keyword")]
-    Find { keyword: String },
+    Find {
+        keyword: String,
+    },
     #[command(about = "Sync repositories")]
     Sync,
-    #[command(about = "Generate shell completion scripts")]
-    Completion { shell: Shell },
+    Shell {
+        shell: Shell,
+    },
     #[command(about = "Import repositories from a path")]
-    Import { path: PathBuf },
+    Import {
+        path: PathBuf,
+    },
     #[command(about = "Remove a repository by path")]
-    Remove { path: PathBuf },
+    Remove {
+        path: PathBuf,
+    },
     #[command(about = "Clean up repositories")]
     Clean,
     #[command(about = "List all repositories")]
@@ -43,6 +50,14 @@ pub enum ECommands {
 struct Cli {
     #[command(subcommand)]
     command: Option<ECommands>,
+}
+
+impl Cli {
+    fn activate(shell: Shell) {
+        let mut cmd = Cli::command();
+        let bin_name = &cmd.get_name().to_string();
+        generate(shell, &mut cmd, bin_name, &mut io::stdout());
+    }
 }
 
 fn show_help() {
@@ -60,24 +75,22 @@ fn main() {
 
     match cli.command {
         Some(ECommands::Add { url, rest }) => commands::add::run(&mut context, &url, &rest),
-        Some(ECommands::Find { keyword }) => commands::find::run(&context, &keyword),
+        Some(ECommands::Find { keyword }) => {
+            commands::find::check_keyword_exists(&context, &keyword);
+        }
         Some(ECommands::Sync) => commands::sync::run(&context),
         Some(ECommands::Import { path }) => commands::import::run(&mut context, path),
         Some(ECommands::Remove { path }) => commands::remove::run(&mut context, path),
         Some(ECommands::Clean) => commands::clean::run(&mut context),
         Some(ECommands::List) => commands::list::run(&mut context),
         Some(ECommands::Init) => commands::init::run(&mut context),
-        Some(ECommands::Completion { shell }) => {
-            let mut cmd = Cli::command();
-            let bin_name = &cmd.get_name().to_string();
-            generate(shell, &mut cmd, bin_name, &mut io::stdout());
-        }
+        Some(ECommands::Shell { shell }) => Cli::activate(shell),
         None => {
             // find the first subcommand in database
             let args_0 = args().nth(1);
             match args_0 {
                 Some(subcommand) => {
-                    let matched = commands::find::run_from_not_matched(&context, &subcommand);
+                    let matched = commands::find::check_keyword_exists(&context, &subcommand);
                     if !matched {
                         show_help();
                     }
@@ -86,4 +99,6 @@ fn main() {
             }
         }
     }
+
+    ()
 }
