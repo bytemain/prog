@@ -41,10 +41,10 @@ for example:
 // repository will be clone to ~/0Workspace/github.com/bytemain/prog
 ```
 
-if you want to change the base directory, you can change the configuration file `~/.prog/config.toml`:
+if you want to change the base directory, you can change field `base` in the configuration file `~/.prog/config.toml`:
 
 ```toml
 base = [
     "~/0Workspace"
 ]
-```sh
+```
