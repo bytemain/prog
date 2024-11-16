@@ -3,7 +3,7 @@ use std::{cell::LazyCell, path::PathBuf};
 use crate::helpers::path::get_config_path;
 
 pub const DEFAULT_CONFIG_TOML: &str = r#"base = [
-
+  "~/0Workspace"
 ]
 
 [alias]

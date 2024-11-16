@@ -21,22 +21,15 @@ pub enum ECommands {
         rest: Vec<String>,
     },
     #[command(about = "Find a repository by keyword")]
-    Find {
-        keyword: String,
-    },
+    Find { keyword: String },
     #[command(about = "Sync repositories")]
     Sync,
-    Shell {
-        shell: Shell,
-    },
+    #[command(about = "Activate shell")]
+    Shell { shell: Shell },
     #[command(about = "Import repositories from a path")]
-    Import {
-        path: PathBuf,
-    },
+    Import { path: PathBuf },
     #[command(about = "Remove a repository by path")]
-    Remove {
-        path: PathBuf,
-    },
+    Remove { path: PathBuf },
     #[command(about = "Clean up repositories")]
     Clean,
     #[command(about = "List all repositories")]
