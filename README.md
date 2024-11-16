@@ -24,7 +24,6 @@ Commands:
   clean   Clean up repositories
   list    List all repositories
   init    Initialize configuration
-  cdtmp   Create a temporary directory
   help    Print this message or the help of the given subcommand(s)
 
 Options:
