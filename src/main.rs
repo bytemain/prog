@@ -4,8 +4,7 @@ mod context;
 mod helpers;
 mod schema;
 
-use std::env::args;
-use std::io;
+use std::io::{self, Write};
 
 use std::path::PathBuf;
 
@@ -21,22 +20,32 @@ pub enum ECommands {
         rest: Vec<String>,
     },
     #[command(about = "Find a repository by keyword")]
-    Find { keyword: String },
+    Find {
+        keyword: String,
+    },
+    Query {
+        keyword: String,
+    },
     #[command(about = "Sync repositories")]
     Sync,
     #[command(about = "Activate shell")]
-    Shell { shell: Shell },
+    Shell {
+        shell: Shell,
+    },
     #[command(about = "Import repositories from a path")]
-    Import { path: PathBuf },
+    Import {
+        path: PathBuf,
+    },
     #[command(about = "Remove a repository by path")]
-    Remove { path: PathBuf },
+    Remove {
+        path: PathBuf,
+    },
     #[command(about = "Clean up repositories")]
     Clean,
     #[command(about = "List all repositories")]
     List,
     #[command(about = "Initialize configuration")]
     Init,
-
     #[command(about = "Create a temporary directory")]
     Cdtmp,
 }
@@ -53,6 +62,8 @@ impl Cli {
         let mut cmd = Cli::command();
         let bin_name = &cmd.get_name().to_string();
         generate(shell, &mut cmd, bin_name, &mut io::stdout());
+        let bytes = include_bytes!("shell-integrations/zsh");
+        io::stdout().write_all(bytes).expect("Could not write to stdout");
     }
 }
 
@@ -74,6 +85,9 @@ fn main() {
         Some(ECommands::Find { keyword }) => {
             commands::find::check_keyword_exists(&context, &keyword);
         }
+        Some(ECommands::Query { keyword }) => {
+            commands::find::query(&context, &keyword);
+        }
         Some(ECommands::Sync) => commands::sync::run(&context),
         Some(ECommands::Import { path }) => commands::import::run(&mut context, path),
         Some(ECommands::Remove { path }) => commands::remove::run(&mut context, path),
@@ -82,20 +96,7 @@ fn main() {
         Some(ECommands::Init) => commands::init::run(&mut context),
         Some(ECommands::Cdtmp) => commands::cdtmp::run(&mut context),
         Some(ECommands::Shell { shell }) => Cli::activate(shell),
-        None => {
-            // find the first subcommand in database
-            let args_0 = args().nth(1);
-            match args_0 {
-                Some(subcommand) => {
-                    let matched = commands::find::check_keyword_exists(&context, &subcommand);
-                    if !matched {
-                        show_help();
-                    }
-                }
-                None => show_help(),
-            }
-        }
+        None => show_help(),
     }
-
     ()
 }

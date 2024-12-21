@@ -1,4 +1,5 @@
 use inquire::Select;
+use log::info;
 
 use crate::{context::Context, helpers::platform};
 
@@ -14,6 +15,28 @@ pub fn find_keyword(c: &Context, keyword: &str) -> Option<Vec<String>> {
     }
     let options = result.iter().map(|r| r.fs_path()).collect::<Vec<_>>();
     Some(options)
+}
+
+pub fn query(c: &Context, keyword: &str) {
+    let result = find_keyword(c, keyword).unwrap_or_default();
+
+    if result.is_empty() {
+        return;
+    }
+
+    if result.len() == 1 {
+        println!("{}", &result[0]);
+        return;
+    }
+
+    let ans = Select::new("Which project are you looking for?", result).prompt();
+
+    match ans {
+        Ok(choice) => {
+            println!("{}", &choice);
+        }
+        Err(_) => println!("There was an error, please try again"),
+    }
 }
 
 pub fn check_keyword_exists(c: &Context, keyword: &str) -> bool {

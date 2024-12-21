@@ -1,0 +1,25 @@
+function __prog_cd() {
+        \builtin cd -- "$@"
+}
+
+function __prog_p() {
+    if [[ "$#" -eq 0 ]]
+    then
+            __prog_cd ~
+    elif [[ "$#" -eq 1 ]] && {
+                    [[ -d "$1" ]] || [[ "$1" = '-' ]] || [[ "$1" =~ ^[-+][0-9]$ ]]
+            }
+    then
+            __prog_cd "$1"
+    elif [[ "$#" -eq 2 ]] && [[ "$1" = "--" ]]
+    then
+            __prog_cd "$2"
+    else
+            \builtin local result
+            result="$(\command prog query -- "$@")"  && __prog_cd "${result}"
+    fi
+}
+
+function p() {
+  __prog_p "$@"
+}
