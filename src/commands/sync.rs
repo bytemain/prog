@@ -56,6 +56,9 @@ fn read_repo_from_dir(dir: &str) -> Vec<SyncItem> {
 }
 
 pub fn run(c: &Context) {
+    info!("Deleting old database...");
+    c.delete_db_folder();
+
     info!("Syncing...");
     let base_dirs = c.config().get_all_base_dir();
 
