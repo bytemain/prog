@@ -3,8 +3,6 @@
 ## Installation
 
 ```sh
-cargo install --git ssh://git@github.com/bytemain/prog.git
-# or via HTTP
 cargo install --git https://github.com/bytemain/prog.git
 ```
 

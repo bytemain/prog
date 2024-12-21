@@ -54,6 +54,10 @@ impl Config {
         url
     }
 
+    pub fn get_tmp_dir(&self) -> String {
+        shellexpand::tilde(&self.tmp_dir).to_string()
+    }
+
     pub fn create_tmp_dir(&self) -> String {
         let suffix = get_random_string(6);
         let tmp_dir = format!("{}/{}-{}", self.tmp_dir, PROGRAM, suffix);

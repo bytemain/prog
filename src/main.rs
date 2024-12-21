@@ -8,7 +8,7 @@ use std::io::{self, Write};
 
 use std::path::PathBuf;
 
-use clap::{CommandFactory, Parser, Subcommand};
+use clap::{Args, CommandFactory, Parser, Subcommand};
 use clap_complete::{generate, Shell};
 
 #[derive(Subcommand, Debug)]
@@ -46,8 +46,25 @@ pub enum ECommands {
     List,
     #[command(about = "Initialize configuration")]
     Init,
+
+    Tmp(TmpArgs),
+}
+
+#[derive(Debug, Args)]
+#[command(args_conflicts_with_subcommands = true)]
+struct TmpArgs {
+    #[command(subcommand)]
+    command: Option<TmpCommands>,
+}
+
+#[derive(Debug, Subcommand)]
+enum TmpCommands {
+    #[command(about = "Clean temporary directories")]
+    Clean,
     #[command(about = "Create a temporary directory")]
-    Cdtmp,
+    Create,
+    #[command(about = "List temporary directories")]
+    List,
 }
 
 #[derive(Parser, Debug)]
@@ -94,7 +111,14 @@ fn main() {
         Some(ECommands::Clean) => commands::clean::run(&mut context),
         Some(ECommands::List) => commands::list::run(&mut context),
         Some(ECommands::Init) => commands::init::run(&mut context),
-        Some(ECommands::Cdtmp) => commands::cdtmp::run(&mut context),
+        Some(ECommands::Tmp(tmp)) => {
+            let tmp_cmd = tmp.command.unwrap();
+            match tmp_cmd {
+                TmpCommands::Clean => commands::tmp::cleanoutdate(&mut context),
+                TmpCommands::Create => commands::tmp::run(&mut context),
+                TmpCommands::List => commands::tmp::list_files(&mut context),
+            }
+        }
         Some(ECommands::Shell { shell }) => Cli::activate(shell),
         None => show_help(),
     }
