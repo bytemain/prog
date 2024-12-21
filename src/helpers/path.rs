@@ -25,3 +25,9 @@ pub fn expand_path(path: &str) -> PathBuf {
     let path = shellexpand::tilde(path).into_owned();
     PathBuf::from(path)
 }
+
+pub fn ensure_dir_exists(path: &PathBuf) {
+    if !path.exists() {
+        std::fs::create_dir_all(path).unwrap();
+    }
+}

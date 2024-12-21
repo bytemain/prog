@@ -1,4 +1,5 @@
 use super::models::*;
+use crate::helpers::path::ensure_dir_exists;
 use crate::schema::repos::dsl;
 use crate::{constants, schema::repos};
 use diesel::prelude::*;
@@ -16,6 +17,8 @@ pub struct Database {
 impl Database {
     pub fn new() -> Self {
         let database_path = constants::DATABASE_FOLDER.clone();
+        ensure_dir_exists(&database_path);
+
         let database_url = database_path.join("db.sqlite3").to_string_lossy().to_string();
         let conn = SqliteConnection::establish(&database_url)
             .unwrap_or_else(|_| panic!("Error connecting to {}", database_url));
