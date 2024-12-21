@@ -5,6 +5,11 @@ use crate::{constants, context::Context};
 pub fn run(c: &mut Context) {
     let config_file_path = constants::CONFIG_TOML_FILE.clone();
 
+    if config_file_path.exists() {
+        println!("Config file already exists: {}", config_file_path.display());
+        return;
+    }
+
     let config_dir = config_file_path.parent().unwrap();
     if !config_dir.exists() {
         match std::fs::create_dir_all(config_dir) {
