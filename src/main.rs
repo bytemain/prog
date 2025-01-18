@@ -94,16 +94,19 @@ impl Cli {
         for command in commands {
             if_check.push(format!("[[ \"$1\" = \"{}\" ]]", command));
         }
-
         let if_check_statement = if_check.join(" || ");
 
+        let command = "p";
         let bytes = include_str!("shell-integrations/zsh");
         let context = collection! {
             String::from("if_check_statement") => if_check_statement,
+            String::from("command") => String::from(command),
         };
+
         let text = render_template(String::from(bytes), &context);
 
         generate(shell, &mut cmd, bin_name, &mut io::stdout());
+        generate(shell, &mut cmd, command, &mut io::stdout());
         io::stdout().write(text.as_bytes()).expect("Could not write to stdout");
     }
 }

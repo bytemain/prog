@@ -25,6 +25,6 @@ function __prog_p() {
     fi
 }
 
-function p() {
+function {{command}}() {
   __prog_p "$@"
 }
