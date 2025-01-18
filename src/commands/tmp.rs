@@ -77,6 +77,9 @@ pub fn cleanoutdate(c: &mut Context) {
 
 pub fn list_files(c: &mut Context) {
     let tmp_dir = c.config().get_tmp_dir();
+    let now = SystemTime::now();
+    let seven_days_ago = now - Duration::from_secs(7 * 24 * 60 * 60);
+
     match fs::read_dir(&tmp_dir) {
         Ok(entries) => {
             for entry in entries {
@@ -84,9 +87,28 @@ pub fn list_files(c: &mut Context) {
                     if let Ok(metadata) = entry.metadata() {
                         let created = metadata.created().unwrap_or(SystemTime::UNIX_EPOCH);
                         let modified = metadata.modified().unwrap_or(SystemTime::UNIX_EPOCH);
+                        let is_outdated = modified < seven_days_ago;
+                        let outdated_marker = if is_outdated {
+                            crossterm::style::Stylize::red(String::from("[outdated]"))
+                        } else {
+                            // 将modified 转换为 n days ago
+                            let duration = now.duration_since(modified).unwrap();
+                            let days = duration.as_secs() / (24 * 60 * 60);
+
+                            if days > 0 {
+                                crossterm::style::Stylize::green(format!("[{} days ago]", days))
+                            } else {
+                                crossterm::style::Stylize::green(format!(
+                                    "[{} hours ago]",
+                                    duration.as_secs() / (60 * 60)
+                                ))
+                            }
+                        };
+
                         println!(
-                            "File: {:?}, Created: {:?}, Modified: {:?}",
-                            entry.path(),
+                            "{} {} Created: {} Modified: {}",
+                            outdated_marker,
+                            entry.path().to_string_lossy(),
                             chrono::DateTime::<chrono::Local>::from(created)
                                 .format("%Y-%m-%d %H:%M:%S")
                                 .to_string(),

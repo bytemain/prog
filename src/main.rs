@@ -136,8 +136,20 @@ fn main() {
         Some(ECommands::List) => commands::list::run(&mut context),
         Some(ECommands::Init) => commands::init::run(&mut context),
         Some(ECommands::Tmp(tmp)) => {
-            let tmp_cmd = tmp.command.unwrap();
-            match tmp_cmd {
+            let tmp_cmd = tmp.command;
+            if tmp_cmd.is_none() {
+                let mut cmd = Cli::command();
+                cmd.get_subcommands_mut().for_each(|subcommand| {
+                    if subcommand.get_name() == "tmp" {
+                        println!("{}", subcommand);
+                        subcommand.print_help().expect("Could not print help");
+                    }
+                });
+
+                std::process::exit(1);
+            }
+
+            match tmp_cmd.unwrap() {
                 TmpCommands::Clean => commands::tmp::cleanoutdate(&mut context),
                 TmpCommands::Create => commands::tmp::run(&mut context),
                 TmpCommands::List => commands::tmp::list_files(&mut context),
