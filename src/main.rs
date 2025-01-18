@@ -2,6 +2,8 @@ mod commands;
 mod constants;
 mod context;
 mod helpers;
+#[macro_use]
+mod macros;
 mod schema;
 
 use std::io::{self, Write};
@@ -10,6 +12,7 @@ use std::path::PathBuf;
 
 use clap::{Args, CommandFactory, Parser, Subcommand};
 use clap_complete::{generate, Shell};
+use helpers::template::render_template;
 
 #[derive(Subcommand, Debug)]
 pub enum ECommands {
@@ -78,9 +81,30 @@ impl Cli {
     fn activate(shell: Shell) {
         let mut cmd = Cli::command();
         let bin_name = &cmd.get_name().to_string();
+
+        // get all commands and make a vec
+        let mut commands = Vec::new();
+        for subcommand in cmd.get_subcommands() {
+            commands.push(subcommand.get_name());
+        }
+
+        // transform commands to if check
+        // [[ "$1" = commands.0 ]] || [[ "$1" = commands.1 ]] ||...
+        let mut if_check = vec![];
+        for command in commands {
+            if_check.push(format!("[[ \"$1\" = \"{}\" ]]", command));
+        }
+
+        let if_check_statement = if_check.join(" || ");
+
+        let bytes = include_str!("shell-integrations/zsh");
+        let context = collection! {
+            String::from("if_check_statement") => if_check_statement,
+        };
+        let text = render_template(String::from(bytes), &context);
+
         generate(shell, &mut cmd, bin_name, &mut io::stdout());
-        let bytes = include_bytes!("shell-integrations/zsh");
-        io::stdout().write_all(bytes).expect("Could not write to stdout");
+        io::stdout().write(text.as_bytes()).expect("Could not write to stdout");
     }
 }
 
