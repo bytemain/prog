@@ -5,7 +5,7 @@ use crate::{
 use anyhow::bail;
 use log::info;
 use serde::Deserialize;
-use std::collections::HashMap;
+use std::{collections::HashMap, path::PathBuf};
 
 #[derive(Deserialize, Debug, Clone)]
 pub struct Config {
@@ -58,9 +58,11 @@ impl Config {
         shellexpand::tilde(&self.tmp_dir).to_string()
     }
 
-    pub fn create_tmp_dir(&self) -> String {
+    pub fn create_tmp_dir(&self) -> PathBuf {
         let suffix = get_random_string(6);
-        let tmp_dir = format!("{}/{}-{}", self.tmp_dir, PROGRAM, suffix);
-        shellexpand::tilde(&tmp_dir).to_string()
+
+        let mut path_buf = PathBuf::from(self.get_tmp_dir());
+        path_buf.push(format!("{}-{}", PROGRAM, suffix));
+        path_buf
     }
 }

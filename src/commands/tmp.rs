@@ -1,4 +1,6 @@
 use crate::context::Context;
+use crate::helpers::path::ensure_dir_exists;
+use crate::helpers::platform;
 use std::fs;
 use std::time::{Duration, SystemTime};
 
@@ -14,6 +16,7 @@ where
         Ok(entries) => {
             for entry in entries {
                 if let Ok(entry) = entry {
+                    println!("{}", entry.path().display());
                     if let Ok(metadata) = entry.metadata() {
                         if is_target(&metadata) {
                             if let Ok(time) = get_time(&metadata) {
@@ -41,6 +44,23 @@ where
                                     }
                                 }
                             }
+
+                            let target = entry.path();
+                            // 检查目录是否为空，如果为空则删除
+                            if fs::read_dir(&target).unwrap().next().is_none() {
+                                if let Err(e) = fs::remove_dir_all(&target) {
+                                    eprintln!(
+                                        "Failed to delete empty directory {}: {}",
+                                        &target.to_str().unwrap_or("N/A"),
+                                        e
+                                    );
+                                } else {
+                                    println!(
+                                        "Deleted empty directory {}",
+                                        &target.to_str().unwrap_or("N/A")
+                                    );
+                                }
+                            }
                         }
                     }
                 }
@@ -51,8 +71,11 @@ where
 }
 
 pub fn run(c: &mut Context) {
-    let temp = c.config().create_tmp_dir();
-    println!("{}", temp);
+    let path = c.config().create_tmp_dir();
+    let path_str = path.to_string_lossy();
+    println!("{}", path.display());
+    ensure_dir_exists(&path);
+    platform::clipboard::copy_path(&path_str);
 }
 
 pub fn clean_by_created(c: &mut Context) {
