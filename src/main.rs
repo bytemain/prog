@@ -15,7 +15,7 @@ use clap_complete::{generate, Shell};
 use helpers::template::render_template;
 
 #[derive(Subcommand, Debug)]
-pub enum ECommands {
+enum ECommands {
     #[command(about = "Add a new repository")]
     Add {
         url: String,

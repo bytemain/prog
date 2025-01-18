@@ -1,5 +1,4 @@
 use inquire::Select;
-use log::info;
 
 use crate::{context::Context, helpers::platform};
 
