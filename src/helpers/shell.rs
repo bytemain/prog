@@ -1,6 +1,8 @@
 use std::process::{Command, Stdio};
 
-pub(crate) fn run(cmd: &str) -> anyhow::Result<()> {
+use anyhow::bail;
+
+pub(crate) fn run(cmd: &str) -> anyhow::Result<(), anyhow::Error> {
     let mut child = Command::new("bash")
         .arg("-c")
         .arg(cmd)
@@ -8,6 +10,11 @@ pub(crate) fn run(cmd: &str) -> anyhow::Result<()> {
         .spawn()
         .expect("Failed to execute command");
 
-    child.wait().expect("command wasn't running");
+    let status = child.wait().expect("command wasn't running");
+
+    if !status.success() {
+        bail!("Command failed with exit status: {}", status);
+    }
+
     Ok(())
 }

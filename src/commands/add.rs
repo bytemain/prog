@@ -37,7 +37,13 @@ pub fn run(c: &mut Context, url: &String, rest: &Vec<String>) {
         full_path.to_str().expect(format!("Cannot construct full path for {}", url).as_str());
     println!("{}", format!("Add: {}", url).green());
 
-    crate::helpers::git::clone(&url, &rest, &target_path).unwrap();
+    let result = crate::helpers::git::clone(&url, &rest, &target_path);
+
+    if result.is_err() {
+        eprintln!("\n{}", format!("Failed to clone: {}", url).red());
+        return;
+    }
+
     c.database_mut().record_item(&base_dir, &url, &host, &name, &owner, &target_path);
 
     println!("{}", format!("Cloned to: {}", target_path).green());
