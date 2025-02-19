@@ -22,6 +22,7 @@ diesel = { version = "2.2.0", features = [
     "returning_clauses_for_sqlite_3_35",
     "chrono",
 ] }
+libsqlite3-sys = { version = ">=0.17.2, <0.32.0", optional = true, features = ["bundled"] }
 diesel_migrations = { version = "2.2.0", features = ["sqlite"] }
 toml = "0.8.19"
 
