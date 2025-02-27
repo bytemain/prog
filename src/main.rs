@@ -87,6 +87,8 @@ impl Cli {
         for subcommand in cmd.get_subcommands() {
             commands.push(subcommand.get_name());
         }
+        // add bultin help
+        commands.push("help");
 
         // transform commands to if check
         // [[ "$1" = commands.0 ]] || [[ "$1" = commands.1 ]] ||...
