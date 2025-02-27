@@ -76,3 +76,7 @@ Then you can use `p` to change to the repository directory without needing to pa
 > p vscode
 # This will change the directory to ~/0Workspace/github.com/microsoft/vscode
 ```
+
+## Debug
+
+use `PROG_LOG="debug"` to enable debug logs
