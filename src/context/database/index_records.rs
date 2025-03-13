@@ -1,6 +1,6 @@
 use super::models::*;
 use linked_hash_map::LinkedHashMap;
-use serde::{Deserialize, Serialize, de::Deserializer, ser::Serializer};
+use serde::{de::Deserializer, ser::Serializer, Deserialize, Serialize};
 
 /// A collection of repository records with O(1) lookup by path while maintaining insertion order.
 /// Uses LinkedHashMap to combine the benefits of HashMap (fast lookups) and Vec (preserved order).
@@ -13,9 +13,7 @@ pub(crate) struct IndexedRecords {
 impl IndexedRecords {
     /// Creates a new empty IndexedRecords instance
     pub(crate) fn new() -> Self {
-        Self {
-            records: LinkedHashMap::new(),
-        }
+        Self { records: LinkedHashMap::new() }
     }
 
     /// Adds a new repository record to the collection
@@ -31,6 +29,26 @@ impl IndexedRecords {
         self.records.insert(path, record);
     }
 
+    /// Updates an existing repository record with new data
+    ///
+    /// # Arguments
+    ///
+    /// * `path` - The path of the repository to update
+    /// * `record` - The new record data
+    ///
+    /// # Returns
+    ///
+    /// * `true` if the record was found and updated
+    /// * `false` if no record with the given path exists
+    pub(crate) fn update(&mut self, path: &str, record: Repo) -> bool {
+        if self.records.contains_key(path) {
+            self.records.insert(path.to_string(), record);
+            true
+        } else {
+            false
+        }
+    }
+
     /// Removes a repository record by its path
     ///
     /// # Arguments
@@ -43,6 +61,10 @@ impl IndexedRecords {
     /// * `false` if no record with the given path exists
     pub(crate) fn remove(&mut self, path: &str) -> bool {
         self.records.remove(path).is_some()
+    }
+
+    pub(crate) fn get(&self, path: &str) -> Option<&Repo> {
+        self.records.get(path)
     }
 
     /// Checks if a repository with the given path exists in the collection

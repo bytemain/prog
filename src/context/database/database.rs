@@ -1,12 +1,12 @@
-use super::models::*;
 use super::index_records::*;
+use super::models::*;
 use crate::constants;
 use crate::helpers::path::ensure_dir_exists;
+use log::error;
 use serde::{Deserialize, Serialize};
 use std::fs::File;
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
-use log::error;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Database {
@@ -32,22 +32,24 @@ impl Database {
     }
 
     fn load_from_file(path: &Path) -> Result<Self, String> {
-        let mut file = File::open(path).map_err(|e| format!("Unable to open database file: {}", e))?;
+        let mut file =
+            File::open(path).map_err(|e| format!("Unable to open database file: {}", e))?;
         let mut contents = String::new();
-        file.read_to_string(&mut contents).map_err(|e| format!("Unable to read database file: {}", e))?;
+        file.read_to_string(&mut contents)
+            .map_err(|e| format!("Unable to read database file: {}", e))?;
         toml::from_str(&contents).map_err(|e| format!("Unable to parse database file: {}", e))
     }
 
     fn save_to_file(&self, path: &Path) -> Result<(), String> {
-        let contents = toml::to_string(self).map_err(|e| format!("Unable to serialize database: {}", e))?;
-        let mut file = File::create(path).map_err(|e| format!("Unable to create database file: {}", e))?;
-        file.write_all(contents.as_bytes()).map_err(|e| format!("Unable to write to database file: {}", e))
+        let contents =
+            toml::to_string(self).map_err(|e| format!("Unable to serialize database: {}", e))?;
+        let mut file =
+            File::create(path).map_err(|e| format!("Unable to create database file: {}", e))?;
+        file.write_all(contents.as_bytes())
+            .map_err(|e| format!("Unable to write to database file: {}", e))
     }
     fn create_new_database() -> Self {
-        let db = Self { 
-            version: CURRENT_VERSION.to_string(), 
-            records: IndexedRecords::new(),
-        };
+        let db = Self { version: CURRENT_VERSION.to_string(), records: IndexedRecords::new() };
         if let Err(e) = db.save() {
             error!("Warning: Failed to save new database: {}", e);
         }
@@ -56,12 +58,10 @@ impl Database {
 
     pub fn new() -> Self {
         let database_file = Self::get_db_path();
-        
+
         let db = if database_file.exists() {
             match Self::load_from_file(&database_file) {
-                Ok(db) => {
-                    db
-                },
+                Ok(db) => db,
                 Err(e) => {
                     error!("Error loading database: {}. Creating a new one.", e);
                     Self::create_new_database()
@@ -70,10 +70,10 @@ impl Database {
         } else {
             Self::create_new_database()
         };
-        
+
         db
     }
-    
+
     pub fn record_item(
         &mut self,
         base_dir: &str,
@@ -83,31 +83,58 @@ impl Database {
         owner: &str,
         full_path: &str,
     ) {
+        let now = chrono::Utc::now().naive_utc();
+
         if self.records.contains(full_path) {
-            println!("Project already exists: {}", full_path);
-            return;
+            // Update existing record
+            println!("Project already exists: {}. Updating record.", full_path);
+
+            // Get the original creation time if available
+            let created_at = if let Some(existing) = self.records.get(full_path) {
+                existing.created_at
+            } else {
+                now
+            };
+
+            // Create updated record
+            let updated_record = Repo {
+                created_at,
+                updated_at: now,
+                host: host.to_string(),
+                repo: repo.to_string(),
+                owner: owner.to_string(),
+                base_dir: base_dir.to_string(),
+                remote_url: remote_url.to_string(),
+                full_path: full_path.to_string(),
+            };
+
+            // Update the record
+            self.records.update(full_path, updated_record);
+        } else {
+            // Create a new record
+            let record = Repo {
+                created_at: now,
+                updated_at: now,
+                host: host.to_string(),
+                repo: repo.to_string(),
+                owner: owner.to_string(),
+                base_dir: base_dir.to_string(),
+                remote_url: remote_url.to_string(),
+                full_path: full_path.to_string(),
+            };
+
+            self.records.add(record);
         }
 
-        let record = Repo {
-            created_at: chrono::Utc::now().naive_utc(),
-            updated_at: chrono::Utc::now().naive_utc(),
-            host: host.to_string(),
-            repo: repo.to_string(),
-            owner: owner.to_string(),
-            base_dir: base_dir.to_string(),
-            remote_url: remote_url.to_string(),
-            full_path: full_path.to_string(),
-        };
-
-        self.records.add(record);
         if let Err(e) = self.save() {
-            error!("Warning: Failed to save database after adding record: {}", e);
+            error!("Warning: Failed to save database after adding/updating record: {}", e);
         }
     }
 
     pub fn find(&self, keyword: &str) -> Vec<Repo> {
         let keyword = keyword.to_lowercase();
-        self.records.get_all()
+        self.records
+            .get_all()
             .iter()
             .filter(|r| {
                 r.host.to_lowercase().contains(&keyword)
