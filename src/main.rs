@@ -69,6 +69,22 @@ enum TmpCommands {
     List,
 }
 
+trait ShellScriptName {
+    /// Returns the content of the corresponding shell integration script
+    fn integration_script(&self) -> &'static str;
+}
+
+impl ShellScriptName for Shell {
+    fn integration_script(&self) -> &'static str {
+        match self {
+            Shell::Bash => include_str!("shell-integrations/bash.sh"),
+            Shell::PowerShell => include_str!("shell-integrations/powershell.ps1"),
+            Shell::Zsh => include_str!("shell-integrations/zsh.sh"),
+            _ => "",
+        }
+    }
+}
+
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None, allow_external_subcommands = true)]
 struct Cli {
@@ -98,13 +114,20 @@ impl Cli {
         let if_check_statement = if_check.join(" || ");
 
         let command = "p";
-        let bytes = include_str!("shell-integrations/zsh");
+
+        let script_content = shell.integration_script();
+
+        if script_content.is_empty() {
+            eprintln!("Shell integration for {:?} is not supported yet.", shell);
+            std::process::exit(1);
+        }
+
         let context = collection! {
             String::from("if_check_statement") => if_check_statement,
             String::from("command") => String::from(command),
         };
 
-        let text = render_template(String::from(bytes), &context);
+        let text = render_template(String::from(script_content), &context);
 
         generate(shell, &mut cmd, bin_name, &mut io::stdout());
         generate(shell, &mut cmd, command, &mut io::stdout());
