@@ -19,9 +19,6 @@ inquire = "0.7.5"
 crossterm = "0.25.0"
 toml = "0.8.19"
 
-[build-dependencies]
-sloughi = { git = "https://github.com/bytemain/sloughi", branch = "main" }
-
 [profile.release]
 opt-level = 'z'
 lto = true

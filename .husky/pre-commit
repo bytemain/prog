@@ -1,9 +1,0 @@
-#!/bin/sh
-. "$(dirname "$0")/_/sloughi.sh"
-
-echo "Running pre-commit..."
-
-changed_files=$(git diff --cached --name-only --diff-filter=ACMR | grep '\.rs$' | sed 's| |\\ |g')
-
-cargo fmt -- $changed_files
-git update-index --again
