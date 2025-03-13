@@ -75,10 +75,6 @@ impl Context {
 
     #[inline]
     pub fn delete_db_folder(&self) {
-        let db_file = constants::DATABASE_FOLDER.clone();
-        match std::fs::remove_dir_all(&db_file) {
-            Ok(_) => {}
-            Err(err) => error!("Could not delete db file: {}", err),
-        }
+        database::Database::delete_db_folder();
     }
 }

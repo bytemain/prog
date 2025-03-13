@@ -4,6 +4,8 @@ use crate::helpers::path::ensure_dir_exists;
 use serde::{Deserialize, Serialize};
 use std::fs::File;
 use std::io::{Read, Write};
+use std::path::{Path, PathBuf};
+use log::error;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Database {
@@ -11,25 +13,63 @@ pub struct Database {
     records: Vec<Repo>,
 }
 
-impl Database {
-    pub fn new() -> Self {
-        let database_path = constants::DATABASE_FOLDER.clone();
-        ensure_dir_exists(&database_path);
+const CURRENT_VERSION: &str = "1.0";
 
-        let database_file = database_path.join("db.toml");
-        if database_file.exists() {
-            let mut file = File::open(&database_file).expect("Unable to open database file");
-            let mut contents = String::new();
-            file.read_to_string(&mut contents).expect("Unable to read database file");
-            let db: Database = toml::from_str(&contents).expect("Unable to parse database file");
-            db
-        } else {
-            let db = Self { version: "1.0".to_string(), records: vec![] };
-            db.save();
-            db
+impl Database {
+    pub fn delete_db_folder() {
+        let db_file = constants::DATABASE_FOLDER.clone();
+        match std::fs::remove_dir_all(&db_file) {
+            Ok(_) => {}
+            Err(err) => error!("Could not delete db file: {}", err),
         }
     }
 
+    fn get_db_path() -> PathBuf {
+        let database_path = constants::DATABASE_FOLDER.clone();
+        ensure_dir_exists(&database_path);
+        database_path.join("db.toml")
+    }
+
+    fn load_from_file(path: &Path) -> Result<Self, String> {
+        let mut file = File::open(path).map_err(|e| format!("Unable to open database file: {}", e))?;
+        let mut contents = String::new();
+        file.read_to_string(&mut contents).map_err(|e| format!("Unable to read database file: {}", e))?;
+        toml::from_str(&contents).map_err(|e| format!("Unable to parse database file: {}", e))
+    }
+
+    fn save_to_file(&self, path: &Path) -> Result<(), String> {
+        let contents = toml::to_string(self).map_err(|e| format!("Unable to serialize database: {}", e))?;
+        let mut file = File::create(path).map_err(|e| format!("Unable to create database file: {}", e))?;
+        file.write_all(contents.as_bytes()).map_err(|e| format!("Unable to write to database file: {}", e))
+    }
+    fn create_new_database() -> Self {
+        let db = Self { version: CURRENT_VERSION.to_string(), records: vec![] };
+        if let Err(e) = db.save() {
+            error!("Warning: Failed to save new database: {}", e);
+        }
+        db
+    }
+
+    pub fn new() -> Self {
+        let database_file = Self::get_db_path();
+        
+        let db = if database_file.exists() {
+            match Self::load_from_file(&database_file) {
+                Ok(db) => {
+                    db
+                },
+                Err(e) => {
+                    error!("Error loading database: {}. Creating a new one.", e);
+                    Self::create_new_database()
+                }
+            }
+        } else {
+            Self::create_new_database()
+        };
+        
+        db
+    }
+    
     pub fn record_item(
         &mut self,
         base_dir: &str,
@@ -56,7 +96,9 @@ impl Database {
         };
 
         self.records.push(record);
-        self.save();
+        if let Err(e) = self.save() {
+            error!("Warning: Failed to save database after adding record: {}", e);
+        }
     }
 
     pub fn find(&self, keyword: &str) -> Vec<Repo> {
@@ -76,22 +118,17 @@ impl Database {
 
     pub fn remove(&mut self, path: &str) {
         self.records.retain(|r| r.full_path != path);
-        self.save();
+        if let Err(e) = self.save() {
+            error!("Warning: Failed to save database after removing record: {}", e);
+        }
     }
 
     pub fn get_all_items(&self) -> Vec<Repo> {
         self.records.clone()
     }
 
-    fn save(&self) {
-        let database_path = constants::DATABASE_FOLDER.clone();
-        let database_file = database_path.join("db.toml");
-        let contents = toml::to_string(self).expect("Unable to serialize database");
-        let mut file = File::create(&database_file).expect("Unable to create database file");
-        file.write_all(contents.as_bytes()).expect("Unable to write to database file");
-    }
-
-    pub fn migrate(&mut self) {
-        // Migration logic here
+    fn save(&self) -> Result<(), String> {
+        let database_file = Self::get_db_path();
+        self.save_to_file(&database_file)
     }
 }
