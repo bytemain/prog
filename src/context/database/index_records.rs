@@ -1,47 +1,37 @@
 use super::models::*;
+use linked_hash_map::LinkedHashMap;
 use serde::{Deserialize, Serialize, de::Deserializer, ser::Serializer};
-use std::collections::HashMap;
 
-/// A collection of repository records with O(1) lookup by path.
-/// This structure maintains an index of paths to their positions in the records vector,
-/// providing efficient lookup, addition, and removal operations.
+/// A collection of repository records with O(1) lookup by path while maintaining insertion order.
+/// Uses LinkedHashMap to combine the benefits of HashMap (fast lookups) and Vec (preserved order).
 #[derive(Debug, Clone)]
 pub(crate) struct IndexedRecords {
-    /// The vector containing all repository records
-    records: Vec<Repo>,
-    /// A hashmap that maps repository paths to their indices in the records vector
-    path_index: HashMap<String, usize>,
+    /// LinkedHashMap storing repository records with path as key, preserving insertion order
+    records: LinkedHashMap<String, Repo>,
 }
 
 impl IndexedRecords {
     /// Creates a new empty IndexedRecords instance
     pub(crate) fn new() -> Self {
         Self {
-            records: Vec::new(),
-            path_index: HashMap::new(),
+            records: LinkedHashMap::new(),
         }
     }
 
     /// Adds a new repository record to the collection
     ///
-    /// The record is appended to the records vector and its path is indexed
-    /// in the path_index hashmap.
+    /// The record is added to the LinkedHashMap with its path as the key,
+    /// preserving insertion order.
     ///
     /// # Arguments
     ///
     /// * `record` - The repository record to add
     pub(crate) fn add(&mut self, record: Repo) {
         let path = record.full_path.clone();
-        self.path_index.insert(path, self.records.len());
-        self.records.push(record);
+        self.records.insert(path, record);
     }
 
     /// Removes a repository record by its path
-    ///
-    /// This method:
-    /// 1. Removes the entry from the path_index hashmap
-    /// 2. Removes the record from the records vector
-    /// 3. Updates indices in path_index for all records after the removed one
     ///
     /// # Arguments
     ///
@@ -52,16 +42,7 @@ impl IndexedRecords {
     /// * `true` if the record was found and removed
     /// * `false` if no record with the given path exists
     pub(crate) fn remove(&mut self, path: &str) -> bool {
-        if let Some(index) = self.path_index.remove(path) {
-            self.records.remove(index);
-            // Update indices for all records after the removed one
-            // since they all shifted one position back
-            for (i, record) in self.records.iter().enumerate().skip(index) {
-                self.path_index.insert(record.full_path.clone(), i);
-            }
-            return true;
-        }
-        false
+        self.records.remove(path).is_some()
     }
 
     /// Checks if a repository with the given path exists in the collection
@@ -75,16 +56,16 @@ impl IndexedRecords {
     /// * `true` if a record with the given path exists
     /// * `false` otherwise
     pub(crate) fn contains(&self, path: &str) -> bool {
-        self.path_index.contains_key(path)
+        self.records.contains_key(path)
     }
 
-    /// Returns a reference to the vector containing all records
+    /// Returns a vector containing all records in their insertion order
     ///
     /// # Returns
     ///
-    /// * Reference to the vector of all repository records
-    pub(crate) fn get_all(&self) -> &Vec<Repo> {
-        &self.records
+    /// * Vector of all repository records in insertion order (owned values, not references)
+    pub(crate) fn get_all(&self) -> Vec<Repo> {
+        self.records.values().cloned().collect()
     }
 
     /// Creates an IndexedRecords instance from a vector of repository records
@@ -103,20 +84,30 @@ impl IndexedRecords {
         }
         indexed
     }
+
+    /// Converts the IndexedRecords to a Vec, maintaining insertion order
+    ///
+    /// # Returns
+    ///
+    /// * A vector of all repository records in insertion order
+    fn to_vec(&self) -> Vec<Repo> {
+        self.records.values().cloned().collect()
+    }
 }
 
-/// Custom serialization implementation that only serializes the records vector
+/// Custom serialization implementation that serializes as a vector to maintain order
 impl Serialize for IndexedRecords {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
     {
-        // Only serialize the records, not the index
-        self.records.serialize(serializer)
+        // Convert to vector maintaining order and serialize
+        let ordered_records: Vec<Repo> = self.to_vec();
+        ordered_records.serialize(serializer)
     }
 }
 
-/// Custom deserialization implementation that reconstructs the path index
+/// Custom deserialization implementation that builds a LinkedHashMap from the vector
 impl<'de> Deserialize<'de> for IndexedRecords {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
@@ -124,7 +115,7 @@ impl<'de> Deserialize<'de> for IndexedRecords {
     {
         // Deserialize as a vector of Repo objects
         let records = Vec::<Repo>::deserialize(deserializer)?;
-        // Rebuild the index using from_vec
+        // Build the IndexedRecords from the vector
         Ok(IndexedRecords::from_vec(records))
     }
 }
