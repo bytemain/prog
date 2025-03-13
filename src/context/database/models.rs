@@ -1,9 +1,6 @@
-use crate::schema::repos;
-use diesel::prelude::*;
+use serde::{Deserialize, Serialize};
 
-#[derive(Queryable, Selectable, Debug, Clone)]
-#[diesel(table_name = repos)]
-#[diesel(check_for_backend(diesel::sqlite::Sqlite))]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Repo {
     pub created_at: chrono::naive::NaiveDateTime,
     pub updated_at: chrono::naive::NaiveDateTime,
@@ -19,17 +16,4 @@ impl Repo {
     pub fn fs_path(&self) -> String {
         format!("{}/{}/{}/{}", self.base_dir, self.host, self.owner, self.repo)
     }
-}
-
-#[derive(Insertable)]
-#[diesel(table_name = repos)]
-pub struct NewRepo<'a> {
-    pub created_at: chrono::naive::NaiveDateTime,
-    pub updated_at: chrono::naive::NaiveDateTime,
-    pub host: &'a str,
-    pub repo: &'a str,
-    pub owner: &'a str,
-    pub remote_url: &'a str,
-    pub base_dir: &'a str,
-    pub full_path: &'a str,
 }

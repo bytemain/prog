@@ -4,7 +4,6 @@ mod context;
 mod helpers;
 #[macro_use]
 mod macros;
-mod schema;
 
 use std::io::{self, Write};
 

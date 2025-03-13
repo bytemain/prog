@@ -1,17 +1,14 @@
 use super::models::*;
 use crate::helpers::path::ensure_dir_exists;
-use crate::schema::repos::dsl;
-use crate::{constants, schema::repos};
-use diesel::prelude::*;
-use diesel::{Connection, SqliteConnection};
-use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
-use log::debug;
-use std::vec;
+use crate::constants;
+use serde::{Deserialize, Serialize};
+use std::fs::File;
+use std::io::{Read, Write};
 
-pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!("migrations");
-
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Database {
-    conn: SqliteConnection,
+    version: String,
+    records: Vec<Repo>,
 }
 
 impl Database {
@@ -19,13 +16,21 @@ impl Database {
         let database_path = constants::DATABASE_FOLDER.clone();
         ensure_dir_exists(&database_path);
 
-        let database_url = database_path.join("db.sqlite3").to_string_lossy().to_string();
-        let conn = SqliteConnection::establish(&database_url)
-            .unwrap_or_else(|_| panic!("Error connecting to {}", database_url));
-        let mut db = Self { conn };
-
-        db.setup_database();
-        db
+        let database_file = database_path.join("db.toml");
+        if database_file.exists() {
+            let mut file = File::open(&database_file).expect("Unable to open database file");
+            let mut contents = String::new();
+            file.read_to_string(&mut contents).expect("Unable to read database file");
+            let db: Database = toml::from_str(&contents).expect("Unable to parse database file");
+            db
+        } else {
+            let db = Self {
+                version: "1.0".to_string(),
+                records: vec![],
+            };
+            db.save();
+            db
+        }
     }
 
     pub fn record_item(
@@ -37,80 +42,59 @@ impl Database {
         owner: &str,
         full_path: &str,
     ) {
-        let record_exists =
-            dsl::repos.filter(dsl::full_path.eq(full_path)).first::<Repo>(&mut self.conn);
-        // check if the record already exists
-        if let Ok(r) = record_exists {
-            println!("Project already exists: {}", r.fs_path());
+        if self.records.iter().any(|r| r.full_path == full_path) {
+            println!("Project already exists: {}", full_path);
             return;
         }
 
-        let record = NewRepo {
+        let record = Repo {
             created_at: chrono::Utc::now().naive_utc(),
             updated_at: chrono::Utc::now().naive_utc(),
-            host,
-            repo,
-            owner,
-            base_dir,
-            remote_url,
-            full_path,
+            host: host.to_string(),
+            repo: repo.to_string(),
+            owner: owner.to_string(),
+            base_dir: base_dir.to_string(),
+            remote_url: remote_url.to_string(),
+            full_path: full_path.to_string(),
         };
 
-        diesel::insert_into(repos::table)
-            .values(&record)
-            .returning(Repo::as_returning())
-            .get_result(&mut self.conn)
-            .expect("Error saving new repo");
+        self.records.push(record);
+        self.save();
     }
 
-    pub fn find(&mut self, keyword: &str) -> Vec<Repo> {
-        use crate::schema::repos::dsl::*;
-
-        let keyword = format!("%{}%", keyword);
-        let results = repos
-            .filter(host.like(&keyword))
-            .or_filter(repo.like(&keyword))
-            .or_filter(owner.like(&keyword))
-            .or_filter(base_dir.like(&keyword))
-            .or_filter(remote_url.like(&keyword))
-            .select(Repo::as_select())
-            .load::<Repo>(&mut self.conn)
-            .unwrap();
-
-        let mut valid_repos = vec![];
-
-        for result in &results {
-            debug!("{:?}", result);
-            debug!("Path: {}", result.fs_path());
-            valid_repos.push(result.clone());
-        }
-
-        valid_repos
+    pub fn find(&self, keyword: &str) -> Vec<Repo> {
+        let keyword = keyword.to_lowercase();
+        self.records
+            .iter()
+            .filter(|r| {
+                r.host.to_lowercase().contains(&keyword)
+                    || r.repo.to_lowercase().contains(&keyword)
+                    || r.owner.to_lowercase().contains(&keyword)
+                    || r.base_dir.to_lowercase().contains(&keyword)
+                    || r.remote_url.to_lowercase().contains(&keyword)
+            })
+            .cloned()
+            .collect()
     }
 
     pub fn remove(&mut self, path: &str) {
-        use crate::schema::repos::dsl::*;
-        diesel::delete(repos.filter(full_path.eq(path))).execute(&mut self.conn);
+        self.records.retain(|r| r.full_path != path);
+        self.save();
     }
 
-    pub fn get_all_items(&mut self) -> Vec<Repo> {
-        use crate::schema::repos::dsl::*;
-
-        repos.select(Repo::as_select()).load::<Repo>(&mut self.conn).unwrap()
+    pub fn get_all_items(&self) -> Vec<Repo> {
+        self.records.clone()
     }
 
-    fn setup_database(&mut self) {
-        diesel::sql_query(
-            r#"
-            PRAGMA busy_timeout = 60000;
-            PRAGMA journal_mode = WAL;
-            PRAGMA synchronous = NORMAL;
-            PRAGMA foreign_keys = ON;
-            "#,
-        )
-        .execute(&mut self.conn)
-        .unwrap();
+    fn save(&self) {
+        let database_path = constants::DATABASE_FOLDER.clone();
+        let database_file = database_path.join("db.toml");
+        let contents = toml::to_string(self).expect("Unable to serialize database");
+        let mut file = File::create(&database_file).expect("Unable to create database file");
+        file.write_all(contents.as_bytes()).expect("Unable to write to database file");
+    }
 
-        self.conn.run_pending_migrations(MIGRATIONS).unwrap();
+    pub fn migrate(&mut self) {
+        // Migration logic here
     }
 }
