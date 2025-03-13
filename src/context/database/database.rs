@@ -1,4 +1,5 @@
 use super::models::*;
+use super::index_records::*;
 use crate::constants;
 use crate::helpers::path::ensure_dir_exists;
 use serde::{Deserialize, Serialize};
@@ -10,7 +11,7 @@ use log::error;
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Database {
     version: String,
-    records: Vec<Repo>,
+    records: IndexedRecords,
 }
 
 const CURRENT_VERSION: &str = "1.0";
@@ -43,7 +44,10 @@ impl Database {
         file.write_all(contents.as_bytes()).map_err(|e| format!("Unable to write to database file: {}", e))
     }
     fn create_new_database() -> Self {
-        let db = Self { version: CURRENT_VERSION.to_string(), records: vec![] };
+        let db = Self { 
+            version: CURRENT_VERSION.to_string(), 
+            records: IndexedRecords::new(),
+        };
         if let Err(e) = db.save() {
             error!("Warning: Failed to save new database: {}", e);
         }
@@ -79,7 +83,7 @@ impl Database {
         owner: &str,
         full_path: &str,
     ) {
-        if self.records.iter().any(|r| r.full_path == full_path) {
+        if self.records.contains(full_path) {
             println!("Project already exists: {}", full_path);
             return;
         }
@@ -95,7 +99,7 @@ impl Database {
             full_path: full_path.to_string(),
         };
 
-        self.records.push(record);
+        self.records.add(record);
         if let Err(e) = self.save() {
             error!("Warning: Failed to save database after adding record: {}", e);
         }
@@ -103,7 +107,7 @@ impl Database {
 
     pub fn find(&self, keyword: &str) -> Vec<Repo> {
         let keyword = keyword.to_lowercase();
-        self.records
+        self.records.get_all()
             .iter()
             .filter(|r| {
                 r.host.to_lowercase().contains(&keyword)
@@ -117,14 +121,14 @@ impl Database {
     }
 
     pub fn remove(&mut self, path: &str) {
-        self.records.retain(|r| r.full_path != path);
+        self.records.remove(path);
         if let Err(e) = self.save() {
             error!("Warning: Failed to save database after removing record: {}", e);
         }
     }
 
     pub fn get_all_items(&self) -> Vec<Repo> {
-        self.records.clone()
+        self.records.get_all().clone()
     }
 
     fn save(&self) -> Result<(), String> {
