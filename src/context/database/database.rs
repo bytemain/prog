@@ -1,6 +1,6 @@
 use super::models::*;
-use crate::helpers::path::ensure_dir_exists;
 use crate::constants;
+use crate::helpers::path::ensure_dir_exists;
 use serde::{Deserialize, Serialize};
 use std::fs::File;
 use std::io::{Read, Write};
@@ -24,10 +24,7 @@ impl Database {
             let db: Database = toml::from_str(&contents).expect("Unable to parse database file");
             db
         } else {
-            let db = Self {
-                version: "1.0".to_string(),
-                records: vec![],
-            };
+            let db = Self { version: "1.0".to_string(), records: vec![] };
             db.save();
             db
         }
