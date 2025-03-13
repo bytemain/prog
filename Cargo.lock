@@ -590,8 +590,7 @@ dependencies = [
 [[package]]
 name = "git-url-parse"
 version = "0.4.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "68d7ff03a34ea818a59cf30c0d7aa55354925484fa30bcc4cb96d784ff07578f"
+source = "git+https://github.com/tjtelan/git-url-parse-rs.git?rev=23031bfa3e7d0cbba17a2ccbe26f348c35f5c524#23031bfa3e7d0cbba17a2ccbe26f348c35f5c524"
 dependencies = [
  "strum",
  "thiserror",
