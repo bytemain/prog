@@ -1,5 +1,5 @@
 use crate::context::Context;
-use crossterm::style::Stylize;
+use crate::helpers::colors::Colorize;
 use inquire::Confirm;
 use std::path::{Path, PathBuf};
 

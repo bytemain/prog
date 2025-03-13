@@ -1,3 +1,4 @@
+use crate::helpers::colors::Colorize;
 use crate::context::Context;
 use crate::helpers::path::ensure_dir_exists;
 use crate::helpers::platform;
@@ -112,19 +113,19 @@ pub fn list_files(c: &mut Context) {
                         let modified = metadata.modified().unwrap_or(SystemTime::UNIX_EPOCH);
                         let is_outdated = modified < seven_days_ago;
                         let outdated_marker = if is_outdated {
-                            crossterm::style::Stylize::red(String::from("[outdated]"))
+                            String::from("[outdated]").red()
                         } else {
                             // 将modified 转换为 n days ago
                             let duration = now.duration_since(modified).unwrap();
                             let days = duration.as_secs() / (24 * 60 * 60);
 
                             if days > 0 {
-                                crossterm::style::Stylize::green(format!("[{} days ago]", days))
+                                format!("[{} days ago]", days).green()
                             } else {
-                                crossterm::style::Stylize::green(format!(
+                                format!(
                                     "[{} hours ago]",
                                     duration.as_secs() / (60 * 60)
-                                ))
+                                ).green()
                             }
                         };
 

@@ -2,8 +2,8 @@ use crate::constants;
 use crate::context::configuration;
 use crate::context::database;
 use crate::helpers::path::PROGRAM;
-use crossterm::style::Stylize;
-use log::{debug, error};
+use crate::helpers::colors::Colorize;
+use log::debug;
 use std::cell::OnceCell;
 use std::cell::RefCell;
 use std::cell::RefMut;
@@ -60,13 +60,6 @@ impl Context {
                     config_file_path.display()).red()
                 );
                 exit(1);
-            }
-
-            if !constants::DATABASE_FOLDER.exists() {
-                match std::fs::create_dir_all(constants::DATABASE_FOLDER.clone()) {
-                    Ok(_) => {}
-                    Err(err) => panic!("Could not create database folder: {}", err),
-                }
             }
 
             config

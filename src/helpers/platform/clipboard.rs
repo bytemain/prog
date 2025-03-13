@@ -1,6 +1,6 @@
 use std::process::{Command, Stdio};
 use std::io::Write;
-use crossterm::style::Stylize;
+use crate::helpers::colors::Colorize;
 use std::env;
 
 pub fn copy_path(path: &str) {

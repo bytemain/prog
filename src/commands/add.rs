@@ -1,7 +1,7 @@
 use std::path::Path;
 
 use crate::{context::Context, helpers::platform};
-use crossterm::style::Stylize;
+use crate::helpers::colors::Colorize;
 use git_url_parse::GitUrl;
 use log::debug;
 
