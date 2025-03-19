@@ -1,32 +1,26 @@
 use crate::context::Context;
 use crate::helpers::colors::Colorize;
-use inquire::Confirm;
-use std::path::{Path, PathBuf};
+use std::io::{self, Write};
+use std::path::PathBuf;
 
-pub fn run(c: &Context, path: PathBuf) {
-    let path_str = shellexpand::tilde(&path.to_str().unwrap()).into_owned();
+pub fn run(c: &mut Context, path: PathBuf, skip_confirmation: bool) {
+    let path_str = path.to_string_lossy();
 
-    let path = Path::new(&path_str);
-    if !path.exists() {
-        eprintln!("{}", format!("Path not found: {:?}", path).red());
-        return;
-    }
+    // If not skipping confirmation, prompt the user
+    if !skip_confirmation {
+        print!("{} {} {}", "Are you sure you want to remove".yellow(), path_str.blue(), "[y/N]:".yellow());
+        io::stdout().flush().unwrap();
 
-    println!("Remove: {:?}", path.display());
+        let mut input = String::new();
+        io::stdin().read_line(&mut input).unwrap();
 
-    let ans = Confirm::new("Are you sure you want to remove this repository?")
-        .with_default(false)
-        .with_help_message(
-            "Remove repository will delete it from the database and remove the directory.",
-        )
-        .prompt();
-
-    match ans {
-        Ok(true) => {
-            std::fs::remove_dir_all(&path).expect("Error when removing directory");
-            c.database_mut().remove(&path_str);
-            println!("Repository removed: {:?}", path);
+        if !input.trim().eq_ignore_ascii_case("y") {
+            println!("Operation cancelled.");
+            return;
         }
-        _ => println!("\nCancelled"),
     }
+
+    println!("{}", format!("Removing: {}", path_str).yellow());
+    c.database_mut().remove(&path_str);
+    println!("{}", "Done!".green());
 }

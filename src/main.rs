@@ -41,9 +41,14 @@ enum ECommands {
     #[command(about = "Remove a repository by path")]
     Remove {
         path: PathBuf,
+        #[arg(short = 'y', long = "yes", help = "Skip confirmation prompt")]
+        yes: bool,
     },
     #[command(about = "Clean up repositories")]
-    Clean,
+    Clean {
+        #[arg(short = 'y', long = "yes", help = "Skip confirmation prompt")]
+        yes: bool,
+    },
     #[command(about = "List all repositories")]
     List,
     #[command(about = "Initialize configuration")]
@@ -158,8 +163,8 @@ fn main() {
         }
         Some(ECommands::Sync) => commands::sync::run(&context),
         Some(ECommands::Import { path }) => commands::import::run(&mut context, path),
-        Some(ECommands::Remove { path }) => commands::remove::run(&mut context, path),
-        Some(ECommands::Clean) => commands::clean::run(&mut context),
+        Some(ECommands::Remove { path, yes }) => commands::remove::run(&mut context, path, yes),
+        Some(ECommands::Clean { yes }) => commands::clean::run(&mut context, yes),
         Some(ECommands::List) => commands::list::run(&mut context),
         Some(ECommands::Init) => commands::init::run(&mut context),
         Some(ECommands::Tmp(tmp)) => {
