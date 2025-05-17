@@ -10,7 +10,7 @@ pub fn run(c: &Context, skip_confirmation: bool) {
 
         match ans {
             Ok(true) => {
-                c.delete_db_folder();
+                c.database_mut().clear();
                 println!("Successfully clean the database.");
             }
             Ok(false) => {
@@ -19,7 +19,7 @@ pub fn run(c: &Context, skip_confirmation: bool) {
             Err(_) => println!("Error with questionnaire, try again later"),
         }
     } else {
-        c.delete_db_folder();
+        c.database_mut().clear();
         println!("Successfully clean the database.");
     }
 }

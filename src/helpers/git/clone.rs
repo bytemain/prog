@@ -1,4 +1,3 @@
-// 复杂命令，直接扔进bash执行
 pub fn clone(
     url: &String,
     rest: &Vec<String>,

@@ -12,17 +12,21 @@ use std::path::{Path, PathBuf};
 pub struct Database {
     version: String,
     records: IndexedRecords,
+    last_sync_time: Option<chrono::NaiveDateTime>,
 }
 
 const CURRENT_VERSION: &str = "1.0";
 
 impl Database {
-    pub fn delete_db_folder() {
-        let db_file = constants::DATABASE_FOLDER.clone();
-        match std::fs::remove_dir_all(&db_file) {
-            Ok(_) => {}
-            Err(err) => error!("Could not delete db file: {}", err),
-        }
+    fn reset(&mut self) {
+        self.version = CURRENT_VERSION.to_string();
+        self.records = IndexedRecords::new();
+        self.last_sync_time = None;
+    }
+
+    pub fn clear(&mut self) {
+        self.reset();
+        self.save().unwrap();
     }
 
     fn get_db_path() -> PathBuf {
@@ -48,8 +52,25 @@ impl Database {
         file.write_all(contents.as_bytes())
             .map_err(|e| format!("Unable to write to database file: {}", e))
     }
+
+    pub fn get_last_sync_time(&self) -> Option<chrono::NaiveDateTime> {
+        self.last_sync_time
+    }
+
+    pub fn update_last_sync_time(&mut self) {
+        self.last_sync_time = Some(chrono::Utc::now().naive_utc());
+        if let Err(e) = self.save() {
+            error!("Warning: Failed to save database after updating last sync time: {}", e);
+        }
+        self.save().unwrap();
+    }
+
     fn create_new_database() -> Self {
-        let db = Self { version: CURRENT_VERSION.to_string(), records: IndexedRecords::new() };
+        let db = Self {
+            version: CURRENT_VERSION.to_string(),
+            records: IndexedRecords::new(),
+            last_sync_time: None,
+        };
         if let Err(e) = db.save() {
             error!("Warning: Failed to save new database: {}", e);
         }

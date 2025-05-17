@@ -65,9 +65,4 @@ impl Context {
             config
         })
     }
-
-    #[inline]
-    pub fn delete_db_folder(&self) {
-        database::Database::delete_db_folder();
-    }
 }

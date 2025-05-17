@@ -1,7 +1,6 @@
 use std::process::{Command, Stdio};
 use std::io::Write;
 use crate::helpers::colors::Colorize;
-use std::env;
 
 pub fn copy_path(path: &str) {
     let content = format!("cd {}", path);
