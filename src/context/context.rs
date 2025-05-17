@@ -4,6 +4,7 @@ use crate::context::database;
 use crate::helpers::colors::Colorize;
 use crate::helpers::path::PROGRAM;
 use crate::internal::sync::check_auto_sync;
+use crate::internal::sync::sync;
 use anyhow::bail;
 use log::debug;
 use std::cell::OnceCell;
@@ -106,6 +107,10 @@ impl Context {
 
             config
         })
+    }
+
+    pub fn sync(&self) {
+        sync(self, true);
     }
 
     pub fn auto_sync(&self) {

@@ -29,24 +29,8 @@ impl IndexedRecords {
         self.records.insert(path, record);
     }
 
-    /// Updates an existing repository record with new data
-    ///
-    /// # Arguments
-    ///
-    /// * `path` - The path of the repository to update
-    /// * `record` - The new record data
-    ///
-    /// # Returns
-    ///
-    /// * `true` if the record was found and updated
-    /// * `false` if no record with the given path exists
-    pub(crate) fn update(&mut self, path: &str, record: Repo) -> bool {
-        if self.records.contains_key(path) {
-            self.records.insert(path.to_string(), record);
-            true
-        } else {
-            false
-        }
+    pub(crate) fn insert(&mut self, path: &str, record: Repo) {
+        self.records.insert(path.to_string(), record);
     }
 
     /// Removes a repository record by its path
@@ -65,20 +49,6 @@ impl IndexedRecords {
 
     pub(crate) fn get(&self, path: &str) -> Option<&Repo> {
         self.records.get(path)
-    }
-
-    /// Checks if a repository with the given path exists in the collection
-    ///
-    /// # Arguments
-    ///
-    /// * `path` - The path to check for
-    ///
-    /// # Returns
-    ///
-    /// * `true` if a record with the given path exists
-    /// * `false` otherwise
-    pub(crate) fn contains(&self, path: &str) -> bool {
-        self.records.contains_key(path)
     }
 
     /// Returns a vector containing all records in their insertion order

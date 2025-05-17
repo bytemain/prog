@@ -1,10 +1,10 @@
-use inquire::Select;
-use log::debug;
-
 use crate::{
     context::Context,
     helpers::{path, platform},
 };
+use inquire::Select;
+use log::debug;
+use std::collections::HashSet;
 
 fn handle_result(path: &str) {
     println!("Found: {}", path);
@@ -18,19 +18,32 @@ pub fn find_keyword(c: &Context, keyword: &str) -> Option<Vec<String>> {
     if result.is_empty() {
         return None;
     }
-    let mut options = vec![];
+    let mut options = HashSet::<String>::new();
 
+    let mut should_sync = false;
     for repo in result {
         let path: String = repo.fs_path();
         if path::exists(&path) {
             debug!("exists {}", path.clone());
-            options.push(path.clone());
+            options.insert(path.clone());
+
+            if repo.host == keyword {
+                options.insert(repo.host_fs_path());
+            }
+
+            if repo.owner == keyword {
+                options.insert(repo.owner_fs_path());
+            }
         } else {
-            c.database_mut().remove(path.as_str());
+            should_sync = true;
         }
     }
 
-    Some(options)
+    if should_sync {
+        c.sync();
+    }
+
+    Some(options.into_iter().collect())
 }
 
 pub fn query(c: &Context, keyword: &str) {

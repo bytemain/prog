@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -14,6 +16,18 @@ pub struct Repo {
 
 impl Repo {
     pub fn fs_path(&self) -> String {
-        format!("{}/{}/{}/{}", self.base_dir, self.host, self.owner, self.repo)
+        let path =
+            PathBuf::new().join(&self.base_dir).join(&self.host).join(&self.owner).join(&self.repo);
+        path.to_str().unwrap().to_string()
+    }
+
+    pub fn owner_fs_path(&self) -> String {
+        let path = PathBuf::new().join(&self.base_dir).join(&self.host).join(&self.owner);
+        path.to_str().unwrap().to_string()
+    }
+
+    pub fn host_fs_path(&self) -> String {
+        let path = PathBuf::new().join(&self.base_dir).join(&self.host);
+        path.to_str().unwrap().to_string()
     }
 }

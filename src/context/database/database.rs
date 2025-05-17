@@ -105,47 +105,25 @@ impl Database {
         full_path: &str,
     ) {
         let now = chrono::Utc::now().naive_utc();
-
-        if self.records.contains(full_path) {
-            // Update existing record
-            println!("Project already exists: {}. Updating record.", full_path);
-
-            // Get the original creation time if available
-            let created_at = if let Some(existing) = self.records.get(full_path) {
-                existing.created_at
-            } else {
-                now
-            };
-
-            // Create updated record
-            let updated_record = Repo {
-                created_at,
-                updated_at: now,
-                host: host.to_string(),
-                repo: repo.to_string(),
-                owner: owner.to_string(),
-                base_dir: base_dir.to_string(),
-                remote_url: remote_url.to_string(),
-                full_path: full_path.to_string(),
-            };
-
-            // Update the record
-            self.records.update(full_path, updated_record);
+        // Get the original creation time if available
+        let created_at = if let Some(existing) = self.records.get(full_path) {
+            existing.created_at
         } else {
-            // Create a new record
-            let record = Repo {
-                created_at: now,
-                updated_at: now,
-                host: host.to_string(),
-                repo: repo.to_string(),
-                owner: owner.to_string(),
-                base_dir: base_dir.to_string(),
-                remote_url: remote_url.to_string(),
-                full_path: full_path.to_string(),
-            };
+            now
+        };
 
-            self.records.add(record);
-        }
+        // Create updated record
+        let updated_record = Repo {
+            created_at,
+            updated_at: now,
+            host: host.to_string(),
+            repo: repo.to_string(),
+            owner: owner.to_string(),
+            base_dir: base_dir.to_string(),
+            remote_url: remote_url.to_string(),
+            full_path: full_path.to_string(),
+        };
+        self.records.insert(full_path, updated_record);
 
         if let Err(e) = self.save() {
             error!("Warning: Failed to save database after adding/updating record: {}", e);
