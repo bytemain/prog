@@ -1,5 +1,5 @@
-use crate::helpers::colors::Colorize;
 use crate::context::Context;
+use crate::helpers::colors::Colorize;
 use crate::helpers::path::ensure_dir_exists;
 use crate::helpers::platform;
 use std::fs;
@@ -122,10 +122,7 @@ pub fn list_files(c: &mut Context) {
                             if days > 0 {
                                 format!("[{} days ago]", days).green()
                             } else {
-                                format!(
-                                    "[{} hours ago]",
-                                    duration.as_secs() / (60 * 60)
-                                ).green()
+                                format!("[{} hours ago]", duration.as_secs() / (60 * 60)).green()
                             }
                         };
 

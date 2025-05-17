@@ -1,5 +1,5 @@
-use std::fmt;
 use std::env;
+use std::fmt;
 
 // ANSI color codes
 const RED: &str = "\x1b[31m";
@@ -20,31 +20,31 @@ fn colors_enabled() -> bool {
     if env::var("NO_COLOR").is_ok() {
         return false;
     }
-    
+
     if let Ok(color) = env::var("CLICOLOR") {
         if color == "0" {
             return false;
         }
     }
-    
+
     if let Ok(force) = env::var("CLICOLOR_FORCE") {
         if force == "1" {
             return true;
         }
     }
-    
+
     // Check for CI environments where colors are often not wanted
     if env::var("CI").is_ok() || env::var("CONTINUOUS_INTEGRATION").is_ok() {
         return false;
     }
-    
+
     // Check for non-interactive terminals
     if let Ok(term) = env::var("TERM") {
         if term == "dumb" {
             return false;
         }
     }
-    
+
     // Default to enabling colors
     true
 }

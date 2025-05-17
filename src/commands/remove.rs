@@ -8,7 +8,12 @@ pub fn run(c: &mut Context, path: PathBuf, skip_confirmation: bool) {
 
     // If not skipping confirmation, prompt the user
     if !skip_confirmation {
-        print!("{} {} {}", "Are you sure you want to remove".yellow(), path_str.blue(), "[y/N]:".yellow());
+        print!(
+            "{} {} {}",
+            "Are you sure you want to remove".yellow(),
+            path_str.blue(),
+            "[y/N]:".yellow()
+        );
         io::stdout().flush().unwrap();
 
         let mut input = String::new();
