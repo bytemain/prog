@@ -1,6 +1,9 @@
-use inquire::Select;
+use std::fs;
 
-use crate::{context::Context, helpers::platform};
+use inquire::Select;
+use log::debug;
+
+use crate::{context::Context, helpers::{path, platform}};
 
 fn handle_result(path: &str) {
     println!("Found: {}", path);
@@ -12,7 +15,18 @@ pub fn find_keyword(c: &Context, keyword: &str) -> Option<Vec<String>> {
     if result.is_empty() {
         return None;
     }
-    let options = result.iter().map(|r| r.fs_path()).collect::<Vec<_>>();
+    let mut  options = vec![];
+
+    for repo in result {
+        let path: String = repo.fs_path();
+        if path::exists(&path) {
+            debug!("exists {}", path.clone());
+            options.push(path.clone());
+        } else {
+            c.database_mut().remove(path.as_str());
+        }
+    }
+
     Some(options)
 }
 

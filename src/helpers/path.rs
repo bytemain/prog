@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::{fs, path::PathBuf};
 
 use dirs::home_dir;
 
@@ -30,4 +30,8 @@ pub fn ensure_dir_exists(path: &PathBuf) {
     if !path.exists() {
         std::fs::create_dir_all(path).unwrap();
     }
+}
+
+pub fn exists(path: &str) -> bool {
+    fs::metadata(path).is_ok()
 }
