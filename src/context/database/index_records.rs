@@ -85,6 +85,10 @@ impl IndexedRecords {
     fn to_vec(&self) -> Vec<Repo> {
         self.records.values().cloned().collect()
     }
+
+    pub fn size(&self) -> usize {
+        self.records.len()
+    }
 }
 
 /// Custom serialization implementation that serializes as a vector to maintain order

@@ -14,7 +14,7 @@ fn handle_result(path: &str) {
 }
 
 pub fn find_keyword(c: &Context, keyword: &str) -> Option<Vec<String>> {
-    c.auto_sync();
+    c.auto_sync_silent();
 
     let result = c.database_mut().find(keyword);
     if result.is_empty() {
@@ -42,7 +42,7 @@ pub fn find_keyword(c: &Context, keyword: &str) -> Option<Vec<String>> {
     }
 
     if should_sync {
-        c.sync();
+        c.sync_silent();
     }
 
     Some(options.into_iter().collect())

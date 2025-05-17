@@ -108,11 +108,11 @@ impl Context {
         })
     }
 
-    pub fn sync(&self) {
+    pub fn sync_silent(&self) {
         sync(self, true);
     }
 
-    pub fn auto_sync(&self) {
+    pub fn auto_sync_silent(&self) {
         check_auto_sync(self);
     }
 }

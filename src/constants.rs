@@ -16,4 +16,4 @@ auto_sync_interval_secs = 3600
 
 pub const CONFIG_TOML_FILE: LazyCell<PathBuf> = LazyCell::new(|| get_config_path("config.toml"));
 
-pub const DATABASE_FOLDER: LazyCell<PathBuf> = LazyCell::new(|| get_config_path("db"));
+pub const DATABASE_FOLDER: LazyCell<PathBuf> = LazyCell::new(|| get_config_path("data"));

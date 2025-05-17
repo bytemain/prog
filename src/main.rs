@@ -151,6 +151,10 @@ fn main() {
 
     let mut context = context::Context::new();
 
+    if context.database().size() == 0 {
+        context.sync_silent();
+    }
+
     match cli.command {
         Some(ECommands::Add { url, rest }) => commands::add::run(&mut context, &url, &rest),
         Some(ECommands::Find { keyword }) => {
