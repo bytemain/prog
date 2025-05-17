@@ -26,7 +26,7 @@ pub struct Config {
 impl Config {
     pub fn get_base_dir(&self) -> anyhow::Result<String> {
         let base_dirs = self.get_all_base_dir();
-        if base_dirs.len() == 0 {
+        if base_dirs.is_empty() {
             bail!(
                 "Please configure base dir in : {}",
                 constants::CONFIG_TOML_FILE.to_str().unwrap()
@@ -34,7 +34,7 @@ impl Config {
         }
 
         if base_dirs.len() == 1 {
-            return anyhow::Ok(base_dirs.get(0).unwrap().clone());
+            return anyhow::Ok(base_dirs.first().unwrap().clone());
         }
 
         bail!("Not implemented multiple base dir yet");

@@ -97,7 +97,6 @@ pub fn check_auto_sync(c: &Context) {
     let last_sync_time = c.database().get_last_sync_time();
     if last_sync_time.is_none() {
         sync(c, true);
-        return;
     } else {
         let now = chrono::Utc::now().naive_utc();
         let duration = now - last_sync_time.unwrap();

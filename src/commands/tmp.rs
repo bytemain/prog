@@ -131,11 +131,9 @@ pub fn list_files(c: &mut Context) {
                             outdated_marker,
                             entry.path().to_string_lossy(),
                             chrono::DateTime::<chrono::Local>::from(created)
-                                .format("%Y-%m-%d %H:%M:%S")
-                                .to_string(),
+                                .format("%Y-%m-%d %H:%M:%S"),
                             chrono::DateTime::<chrono::Local>::from(modified)
                                 .format("%Y-%m-%d %H:%M:%S")
-                                .to_string()
                         );
                     }
                 }

@@ -80,7 +80,7 @@ impl Database {
     pub fn new() -> Self {
         let database_file = Self::get_db_path();
 
-        let db = if database_file.exists() {
+        if database_file.exists() {
             match Self::load_from_file(&database_file) {
                 Ok(db) => db,
                 Err(e) => {
@@ -90,9 +90,7 @@ impl Database {
             }
         } else {
             Self::create_new_database()
-        };
-
-        db
+        }
     }
 
     pub fn record_item(

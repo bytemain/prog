@@ -1,5 +1,5 @@
 pub fn handle_inquire_error(e: inquire::InquireError) {
-    println!("");
+    println!();
     match e {
         inquire::InquireError::OperationCanceled => {
             println!("operation canceled");

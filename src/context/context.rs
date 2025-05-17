@@ -2,7 +2,6 @@ use crate::constants;
 use crate::context::configuration;
 use crate::context::database;
 use crate::helpers::colors::Colorize;
-use crate::helpers::path::PROGRAM;
 use crate::internal::sync::check_auto_sync;
 use crate::internal::sync::sync;
 use anyhow::bail;
@@ -88,12 +87,12 @@ impl Context {
             let mut config: configuration::Config = toml::from_str(&s).unwrap();
             debug!("read config: {:?}", config);
 
-            if config.tmp_dir.len() == 0 {
+            if config.tmp_dir.is_empty() {
                 let dir = env::temp_dir();
                 config.tmp_dir = dir.to_string_lossy().to_string();
             }
 
-            if config.base.len() == 0 {
+            if config.base.is_empty() {
                 eprintln!(
                     "{}",
                     format!(

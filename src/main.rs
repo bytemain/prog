@@ -134,7 +134,7 @@ impl Cli {
 
         generate(shell, &mut cmd, bin_name, &mut io::stdout());
         generate(shell, &mut cmd, command, &mut io::stdout());
-        io::stdout().write(text.as_bytes()).expect("Could not write to stdout");
+        io::stdout().write_all(text.as_bytes()).expect("Could not write to stdout");
     }
 }
 
@@ -187,5 +187,4 @@ fn main() {
         Some(ECommands::Shell { shell }) => Cli::activate(shell),
         None => show_help(),
     }
-    ()
 }
