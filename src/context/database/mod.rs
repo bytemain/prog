@@ -1,5 +1,5 @@
-mod database;
+mod core;
 mod index_records;
 pub mod models;
 
-pub use database::Database;
+pub use core::Database;

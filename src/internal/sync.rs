@@ -119,7 +119,7 @@ pub fn sync(c: &Context, silent: bool) {
     if !silent {
         info!("Syncing...");
     }
-    let base_dirs = c.config().get_all_base_dir();
+    let base_dirs = c.config().base_dirs();
 
     let repos: Vec<SyncItem> =
         base_dirs.par_iter().map(|base_dir| read_repo_from_dir(base_dir)).flatten().collect();

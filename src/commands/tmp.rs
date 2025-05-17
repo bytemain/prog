@@ -77,18 +77,8 @@ pub fn run(c: &mut Context) {
     platform::clipboard::copy_path(&path_str);
 }
 
-pub fn clean_by_created(c: &mut Context) {
-    let tmp_dir = c.config().get_tmp_dir();
-    clean_directory(
-        &tmp_dir,
-        Duration::new(10 * 24 * 60 * 60, 0),
-        |metadata| metadata.is_dir(),
-        |metadata| metadata.created().or_else(|_| metadata.modified()),
-    );
-}
-
 pub fn cleanoutdate(c: &mut Context) {
-    let tmp_dir = c.config().get_tmp_dir();
+    let tmp_dir = c.config().tmp_dir();
     clean_directory(
         &tmp_dir,
         Duration::new(7 * 24 * 60 * 60, 0),
@@ -98,7 +88,7 @@ pub fn cleanoutdate(c: &mut Context) {
 }
 
 pub fn list_files(c: &mut Context) {
-    let tmp_dir = c.config().get_tmp_dir();
+    let tmp_dir = c.config().tmp_dir();
     let now = SystemTime::now();
     let seven_days_ago = now - Duration::from_secs(7 * 24 * 60 * 60);
 

@@ -1,6 +1,6 @@
 pub fn clone(
     url: &String,
-    rest: &Vec<String>,
+    rest: &[String],
     target_path: &str,
 ) -> anyhow::Result<(), anyhow::Error> {
     let mut list = vec!["git", "clone", url, target_path];

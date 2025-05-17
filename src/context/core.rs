@@ -2,10 +2,12 @@ use crate::constants;
 use crate::context::configuration;
 use crate::context::database;
 use crate::helpers::colors::Colorize;
+use crate::helpers::path::get_config_path;
 use crate::internal::sync::check_auto_sync;
 use crate::internal::sync::sync;
 use anyhow::bail;
 use log::debug;
+use std::cell::LazyCell;
 use std::cell::OnceCell;
 use std::cell::RefCell;
 use std::cell::{Ref, RefMut};
@@ -17,14 +19,15 @@ use std::process::exit;
 pub struct Context {
     pub config: OnceCell<configuration::Config>,
     db: RefCell<database::Database>,
-    config_file_path: PathBuf,
+    config_file_path: LazyCell<PathBuf>,
 }
 
 impl Context {
     #[inline]
     pub fn new() -> Self {
         let db = RefCell::new(database::Database::new());
-        let config_file_path = constants::CONFIG_TOML_FILE.clone();
+        let config_file_path: LazyCell<PathBuf> =
+            LazyCell::new(|| get_config_path(constants::CONFIG_TOML_FILE));
         let config: OnceCell<configuration::Config> = OnceCell::new();
 
         Self { config, db, config_file_path }
@@ -40,8 +43,21 @@ impl Context {
         self.db.borrow_mut()
     }
 
+    pub fn get_base_dir(&self) -> anyhow::Result<String> {
+        let base_dirs = self.config().base_dirs();
+        if base_dirs.is_empty() {
+            bail!("Please configure base dir in : {}", self.config_file_path.display());
+        }
+
+        if base_dirs.len() == 1 {
+            return anyhow::Ok(base_dirs.first().unwrap().clone());
+        }
+
+        bail!("Not implemented multiple base dir yet");
+    }
+
     fn init_config(&self) -> anyhow::Result<()> {
-        let config_file_path = constants::CONFIG_TOML_FILE.clone();
+        let config_file_path = self.config_file_path.clone();
 
         if config_file_path.exists() {
             return Ok(());

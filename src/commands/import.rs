@@ -12,7 +12,7 @@ pub fn run(c: &mut Context, path: PathBuf) {
     if path.exists() {
         info!("path exists, trying to clone");
         let remote_url = get_remote_url(path.to_str().unwrap());
-        add::run(c, &remote_url, &vec![]);
+        add::run(c, &remote_url, &[]);
         return;
     }
 

@@ -2,6 +2,7 @@ use super::index_records::*;
 use super::models::*;
 use crate::constants;
 use crate::helpers::path::ensure_dir_exists;
+use crate::helpers::path::get_config_path;
 use log::error;
 use serde::{Deserialize, Serialize};
 use std::fs::File;
@@ -93,14 +94,30 @@ pub struct Database {
 }
 
 impl Database {
+    pub fn new() -> Self {
+        let database_file = Self::get_db_path();
+
+        if database_file.exists() {
+            match Self::load_from_file(&database_file) {
+                Ok(db) => db,
+                Err(e) => {
+                    error!("Error loading database: {}. Creating a new one.", e);
+                    Self::create_new_database()
+                }
+            }
+        } else {
+            Self::create_new_database()
+        }
+    }
+
     pub fn reset(&mut self) {
         self.data.reset();
     }
 
     fn get_db_path() -> PathBuf {
-        let database_path = constants::DATABASE_FOLDER.clone();
+        let database_path = get_config_path(crate::helpers::path::DATA_FOLDER);
         ensure_dir_exists(&database_path);
-        database_path.join("data.toml")
+        database_path.join(constants::DATABASE_FILE)
     }
 
     fn load_from_file(path: &Path) -> Result<Self, String> {
@@ -138,22 +155,6 @@ impl Database {
 
         db.save().unwrap();
         db
-    }
-
-    pub fn new() -> Self {
-        let database_file = Self::get_db_path();
-
-        if database_file.exists() {
-            match Self::load_from_file(&database_file) {
-                Ok(db) => db,
-                Err(e) => {
-                    error!("Error loading database: {}. Creating a new one.", e);
-                    Self::create_new_database()
-                }
-            }
-        } else {
-            Self::create_new_database()
-        }
     }
 
     pub(crate) fn save(&self) -> Result<(), String> {
