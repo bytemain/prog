@@ -5,9 +5,9 @@ use crate::{context::Context, helpers::platform};
 use git_url_parse::GitUrl;
 use log::debug;
 
-pub fn run(c: &mut Context, url: &String, rest: &Vec<String>) {
+pub fn run(c: &mut Context, url: &str, rest: &Vec<String>) {
     let base_dir = c.config().get_base_dir().unwrap();
-    let url = c.config().replace_alias(url.clone());
+    let url = c.config().replace_alias(url.to_owned());
 
     let url_parsed = GitUrl::parse(&url).unwrap();
     debug!("url parsed: {:#?}", url_parsed);

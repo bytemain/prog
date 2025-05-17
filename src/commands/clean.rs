@@ -11,21 +11,25 @@ pub fn run(c: &Context, skip_confirmation: bool) {
             .with_help_message("This won't delete your git repos in the disk")
             .prompt();
 
-        match ans {
-            Ok(true) => {
-                c.database_mut().reset();
-                println!("Successfully clean the database.");
-            }
+        let skip = match ans {
+            Ok(true) => false,
             Ok(false) => {
                 println!("Canceled.");
+                true
             }
-            Err(e) => handle_inquire_error(e),
+            Err(e) => {
+                handle_inquire_error(e);
+                true
+            }
+        };
+
+        if skip {
+            return;
         }
-    } else {
-        c.database_mut().reset();
-        println!("Successfully clean the database.");
     }
 
+    c.database_mut().reset();
+    println!("Successfully clean the database.");
     if let Err(e) = c.database_mut().save() {
         error!("Failed to save database: {}", e);
     }

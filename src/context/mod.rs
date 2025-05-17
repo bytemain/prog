@@ -1,5 +1,5 @@
 mod configuration;
-mod context;
+mod core;
 mod database;
 
-pub use context::Context;
+pub use core::Context;

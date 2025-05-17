@@ -15,52 +15,50 @@ where
 
     match fs::read_dir(dir) {
         Ok(entries) => {
-            for entry in entries {
-                if let Ok(entry) = entry {
-                    println!("{}", entry.path().display());
-                    if let Ok(metadata) = entry.metadata() {
-                        if is_target(&metadata) {
-                            if let Ok(time) = get_time(&metadata) {
-                                if time < threshold {
-                                    if metadata.is_file() {
-                                        if let Err(e) = fs::remove_file(entry.path()) {
-                                            eprintln!(
-                                                "Failed to delete file {:?}: {}",
-                                                entry.path(),
-                                                e
-                                            );
-                                        } else {
-                                            println!("Deleted file {:?}", entry.path());
-                                        }
-                                    } else if metadata.is_dir() {
-                                        if let Err(e) = fs::remove_dir_all(entry.path()) {
-                                            eprintln!(
-                                                "Failed to delete directory {:?}: {}",
-                                                entry.path(),
-                                                e
-                                            );
-                                        } else {
-                                            println!("Deleted directory {:?}", entry.path());
-                                        }
+            for entry in entries.flatten() {
+                println!("{}", entry.path().display());
+                if let Ok(metadata) = entry.metadata() {
+                    if is_target(&metadata) {
+                        if let Ok(time) = get_time(&metadata) {
+                            if time < threshold {
+                                if metadata.is_file() {
+                                    if let Err(e) = fs::remove_file(entry.path()) {
+                                        eprintln!(
+                                            "Failed to delete file {:?}: {}",
+                                            entry.path(),
+                                            e
+                                        );
+                                    } else {
+                                        println!("Deleted file {:?}", entry.path());
+                                    }
+                                } else if metadata.is_dir() {
+                                    if let Err(e) = fs::remove_dir_all(entry.path()) {
+                                        eprintln!(
+                                            "Failed to delete directory {:?}: {}",
+                                            entry.path(),
+                                            e
+                                        );
+                                    } else {
+                                        println!("Deleted directory {:?}", entry.path());
                                     }
                                 }
                             }
+                        }
 
-                            let target = entry.path();
-                            // 检查目录是否为空，如果为空则删除
-                            if fs::read_dir(&target).unwrap().next().is_none() {
-                                if let Err(e) = fs::remove_dir_all(&target) {
-                                    eprintln!(
-                                        "Failed to delete empty directory {}: {}",
-                                        &target.to_str().unwrap_or("N/A"),
-                                        e
-                                    );
-                                } else {
-                                    println!(
-                                        "Deleted empty directory {}",
-                                        &target.to_str().unwrap_or("N/A")
-                                    );
-                                }
+                        let target = entry.path();
+                        // 检查目录是否为空，如果为空则删除
+                        if fs::read_dir(&target).unwrap().next().is_none() {
+                            if let Err(e) = fs::remove_dir_all(&target) {
+                                eprintln!(
+                                    "Failed to delete empty directory {}: {}",
+                                    &target.to_str().unwrap_or("N/A"),
+                                    e
+                                );
+                            } else {
+                                println!(
+                                    "Deleted empty directory {}",
+                                    &target.to_str().unwrap_or("N/A")
+                                );
                             }
                         }
                     }
@@ -106,36 +104,34 @@ pub fn list_files(c: &mut Context) {
 
     match fs::read_dir(&tmp_dir) {
         Ok(entries) => {
-            for entry in entries {
-                if let Ok(entry) = entry {
-                    if let Ok(metadata) = entry.metadata() {
-                        let created = metadata.created().unwrap_or(SystemTime::UNIX_EPOCH);
-                        let modified = metadata.modified().unwrap_or(SystemTime::UNIX_EPOCH);
-                        let is_outdated = modified < seven_days_ago;
-                        let outdated_marker = if is_outdated {
-                            String::from("[outdated]").red()
+            for entry in entries.flatten() {
+                if let Ok(metadata) = entry.metadata() {
+                    let created = metadata.created().unwrap_or(SystemTime::UNIX_EPOCH);
+                    let modified = metadata.modified().unwrap_or(SystemTime::UNIX_EPOCH);
+                    let is_outdated = modified < seven_days_ago;
+                    let outdated_marker = if is_outdated {
+                        String::from("[outdated]").red()
+                    } else {
+                        // 将modified 转换为 n days ago
+                        let duration = now.duration_since(modified).unwrap();
+                        let days = duration.as_secs() / (24 * 60 * 60);
+
+                        if days > 0 {
+                            format!("[{} days ago]", days).green()
                         } else {
-                            // 将modified 转换为 n days ago
-                            let duration = now.duration_since(modified).unwrap();
-                            let days = duration.as_secs() / (24 * 60 * 60);
+                            format!("[{} hours ago]", duration.as_secs() / (60 * 60)).green()
+                        }
+                    };
 
-                            if days > 0 {
-                                format!("[{} days ago]", days).green()
-                            } else {
-                                format!("[{} hours ago]", duration.as_secs() / (60 * 60)).green()
-                            }
-                        };
-
-                        println!(
-                            "{} {} Created: {} Modified: {}",
-                            outdated_marker,
-                            entry.path().to_string_lossy(),
-                            chrono::DateTime::<chrono::Local>::from(created)
-                                .format("%Y-%m-%d %H:%M:%S"),
-                            chrono::DateTime::<chrono::Local>::from(modified)
-                                .format("%Y-%m-%d %H:%M:%S")
-                        );
-                    }
+                    println!(
+                        "{} {} Created: {} Modified: {}",
+                        outdated_marker,
+                        entry.path().to_string_lossy(),
+                        chrono::DateTime::<chrono::Local>::from(created)
+                            .format("%Y-%m-%d %H:%M:%S"),
+                        chrono::DateTime::<chrono::Local>::from(modified)
+                            .format("%Y-%m-%d %H:%M:%S")
+                    );
                 }
             }
         }

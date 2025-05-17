@@ -1,7 +1,10 @@
 use crate::context::Context;
 use crate::helpers::git::get_remote_url;
+use git_url_parse::GitUrl;
+use ignore::WalkBuilder;
 use log::{error, info};
-use std::fs::read_dir;
+use rayon::prelude::*;
+use std::{sync::mpsc::channel, time::Instant};
 
 #[derive(Debug, Clone)]
 pub struct SyncItem {
@@ -9,49 +12,100 @@ pub struct SyncItem {
     pub repo: String,
     pub owner: String,
     pub remote_url: String,
+    pub base_dir: String,
     pub full_path: String,
 }
 
 fn read_repo_from_dir(dir: &str) -> Vec<SyncItem> {
-    let mut repos = Vec::new();
+    let mut repos: Vec<SyncItem> = Vec::new();
+    let (tx, rx) = channel::<SyncItem>();
+    let threads = std::thread::available_parallelism().map_or(1, |n| n.get()).min(12);
 
-    info!("Reading repos from {}", dir);
-    let paths = std::fs::read_dir(dir).unwrap();
-    for path in paths {
-        let path = path.unwrap().path();
-        if path.is_dir() {
-            let owners = read_dir(&path).unwrap();
-            for owner in owners {
-                let owner = owner.unwrap().path();
-                if owner.is_dir() {
-                    let repos_in_origin = read_dir(&owner).unwrap();
-                    for repo in repos_in_origin {
-                        let repo = repo.unwrap().path();
-                        if repo.is_dir() {
-                            // check if it's a git repo
-                            let git_dir = repo.join(".git");
-                            if !git_dir.exists() {
-                                continue;
+    WalkBuilder::new(dir)
+        .threads(threads)
+        .max_depth(Some(3))
+        .hidden(true)
+        .filter_entry(|entry| entry.file_type().unwrap().is_dir())
+        .build_parallel()
+        .run(|| {
+            let tx_clone = tx.clone();
+            Box::new(move |result_entry| {
+                match result_entry {
+                    Ok(entry) => {
+                        let path = entry.path();
+                        let dot_git_path = path.join(".git");
+                        // Check if .git is a directory (standard for git repos) or a file (for worktrees)
+                        if !dot_git_path.exists() {
+                            return ignore::WalkState::Continue;
+                        }
+
+                        let full_path_str = path.display().to_string();
+
+                        let remote_url_str = get_remote_url(&full_path_str);
+                        if remote_url_str.is_empty() {
+                            log::warn!("Could not determine remote URL for git repository: {}. Skipping item.", full_path_str);
+                            return ignore::WalkState::Continue;
+                        }
+
+                        match GitUrl::parse(&remote_url_str) {
+                            Ok(url_parsed) => {
+                                if url_parsed.host.is_none() || url_parsed.owner.is_none() || url_parsed.name.is_empty() {
+                                    log::error!(
+                                        "Invalid Git URL '{}' (missing host, owner, or repo name) for path: {}. Skipping item.",
+                                        remote_url_str,
+                                        full_path_str
+                                    );
+                                    return ignore::WalkState::Continue;
+                                }
+
+                                let host_name = url_parsed.host.unwrap();
+                                let owner_name = url_parsed.owner.unwrap();
+                                let repo_name = url_parsed.name;
+
+                                let item = SyncItem {
+                                    base_dir: dir.to_string(),
+                                    host: host_name,
+                                    repo: repo_name,
+                                    owner: owner_name,
+                                    remote_url: remote_url_str.clone(),
+                                    full_path: full_path_str,
+                                };
+
+                                if let Err(e) = tx_clone.send(item) {
+                                    error!("Failed to send SyncItem on channel: {}. Quitting walk.", e);
+                                    return ignore::WalkState::Quit; // Critical error in channel communication.
+                                }
                             }
-
-                            let full_path = repo.display().to_string();
-                            let remote_url = get_remote_url(&full_path);
-                            let item = SyncItem {
-                                host: path.file_name().unwrap().to_string_lossy().to_string(),
-                                repo: repo.file_name().unwrap().to_string_lossy().to_string(),
-                                owner: owner.file_name().unwrap().to_string_lossy().to_string(),
-                                remote_url,
-                                full_path,
-                            };
-
-                            info!("{:#?}", item);
-                            repos.push(item);
+                            Err(e) => {
+                                log::error!(
+                                    "Failed to parse remote URL '{}' for git repository at '{}': {}. Skipping item.",
+                                    remote_url_str,
+                                    full_path_str,
+                                    e
+                                );
+                                return ignore::WalkState::Continue;
+                            }
                         }
                     }
+                    Err(err) => {
+                        // Log errors for individual entries but continue the walk.
+                        error!("Error processing entry during directory walk: {}", err);
+                    }
                 }
-            }
-        }
+                ignore::WalkState::Continue
+            })
+        });
+
+    // Drop the original sender. This is crucial for the receiver loop to terminate
+    // once all worker threads have finished and dropped their sender clones.
+    drop(tx);
+
+    // Collect all SyncItems sent through the channel.
+    // This loop will block until the channel is empty and all senders are dropped.
+    for item in rx {
+        repos.push(item);
     }
+
     repos
 }
 
@@ -59,6 +113,7 @@ pub fn sync(c: &Context, silent: bool) {
     if !silent {
         info!("Deleting old database...");
     }
+    let now = Instant::now();
     c.database_mut().reset();
 
     if !silent {
@@ -66,29 +121,31 @@ pub fn sync(c: &Context, silent: bool) {
     }
     let base_dirs = c.config().get_all_base_dir();
 
-    for base_dir in base_dirs {
-        let repos = read_repo_from_dir(&base_dir);
-        for repo in repos {
-            if !silent {
-                println!("Syncing {:?}", repo.full_path);
-            }
-            c.database_mut().record_item(
-                &base_dir,
-                &repo.remote_url,
-                &repo.host,
-                &repo.repo,
-                &repo.owner,
-                &repo.full_path,
-            );
+    let repos: Vec<SyncItem> =
+        base_dirs.par_iter().map(|base_dir| read_repo_from_dir(base_dir)).flatten().collect();
+
+    for repo in repos {
+        if !silent {
+            println!("Syncing {:?}", repo.full_path);
         }
+        c.database_mut().record_item(
+            &repo.base_dir,
+            &repo.remote_url,
+            &repo.host,
+            &repo.repo,
+            &repo.owner,
+            &repo.full_path,
+        );
     }
+
     c.database_mut().update_last_sync_time();
     if let Err(e) = c.database_mut().save() {
         error!("Failed to save database: {}", e);
     }
 
     if !silent {
-        info!("Synced");
+        println!("Synced");
+        println!("Elapsed {}ms", now.elapsed().as_millis());
     }
 }
 
