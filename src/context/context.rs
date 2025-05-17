@@ -1,13 +1,16 @@
 use crate::constants;
 use crate::context::configuration;
 use crate::context::database;
-use crate::helpers::path::PROGRAM;
 use crate::helpers::colors::Colorize;
+use crate::helpers::path::PROGRAM;
+use crate::internal::sync::check_auto_sync;
+use anyhow::bail;
 use log::debug;
 use std::cell::OnceCell;
 use std::cell::RefCell;
-use std::cell::RefMut;
+use std::cell::{Ref, RefMut};
 use std::env;
+use std::io::Write;
 use std::path::PathBuf;
 use std::process::exit;
 
@@ -28,8 +31,39 @@ impl Context {
     }
 
     #[inline]
+    pub fn database(&self) -> Ref<'_, database::Database> {
+        self.db.borrow()
+    }
+
+    #[inline]
     pub fn database_mut(&self) -> RefMut<'_, database::Database> {
         self.db.borrow_mut()
+    }
+
+    fn init_config(&self) -> anyhow::Result<()> {
+        let config_file_path = constants::CONFIG_TOML_FILE.clone();
+
+        if config_file_path.exists() {
+            return Ok(());
+        }
+
+        let config_dir = config_file_path.parent().unwrap();
+        if !config_dir.exists() {
+            match std::fs::create_dir_all(config_dir) {
+                Ok(_) => {}
+                Err(err) => bail!("Could not create config directory: {}", err),
+            }
+        }
+
+        let mut config_file = match std::fs::File::create(&config_file_path) {
+            Ok(file) => file,
+            Err(err) => bail!("Could not create config file: {}", err),
+        };
+
+        match config_file.write_all(constants::DEFAULT_CONFIG_TOML.as_bytes()) {
+            Ok(_) => Ok(()),
+            Err(err) => bail!("Could not write default config: {}", err),
+        }
     }
 
     #[inline]
@@ -37,11 +71,16 @@ impl Context {
         self.config.get_or_init(|| {
             let config_file_path = self.config_file_path.clone();
             if !config_file_path.exists() {
-                eprintln!(
-                    "Could not find config file at {}, you can create one by running `{PROGRAM} init`",
-                    &config_file_path.display()
-                );
-                exit(1);
+                let result = self.init_config();
+                if result.is_err() {
+                    eprintln!(
+                        "{}",
+                        format!("Could not initialize config file: {}", config_file_path.display())
+                            .red()
+                    );
+                    eprintln!("{}", result.unwrap_err());
+                    exit(1);
+                }
             }
 
             let s = std::fs::read_to_string(&config_file_path).unwrap();
@@ -56,13 +95,20 @@ impl Context {
             if config.base.len() == 0 {
                 eprintln!(
                     "{}",
-                    format!("No base path found, please add one to your config file: {}",
-                    config_file_path.display()).red()
+                    format!(
+                        "No base path found, please add one to your config file: {}",
+                        config_file_path.display()
+                    )
+                    .red()
                 );
                 exit(1);
             }
 
             config
         })
+    }
+
+    pub fn auto_sync(&self) {
+        check_auto_sync(self);
     }
 }

@@ -7,6 +7,10 @@ use log::info;
 use serde::Deserialize;
 use std::{collections::HashMap, path::PathBuf};
 
+fn default_auto_sync_interval_secs() -> i64 {
+    3600
+}
+
 #[derive(Deserialize, Debug, Clone)]
 pub struct Config {
     #[serde(default)]
@@ -15,6 +19,8 @@ pub struct Config {
     pub alias: HashMap<String, String>,
     #[serde(default)]
     pub tmp_dir: String,
+    #[serde(default = "default_auto_sync_interval_secs")]
+    pub auto_sync_interval_secs: i64,
 }
 
 impl Config {
@@ -64,5 +70,9 @@ impl Config {
         let mut path_buf = PathBuf::from(self.get_tmp_dir());
         path_buf.push(format!("{}-{}", PROGRAM, suffix));
         path_buf
+    }
+
+    pub fn get_auto_sync_interval_secs(&self) -> i64 {
+        self.auto_sync_interval_secs
     }
 }

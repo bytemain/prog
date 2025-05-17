@@ -2,6 +2,7 @@ mod commands;
 mod constants;
 mod context;
 mod helpers;
+mod internal;
 #[macro_use]
 mod macros;
 
@@ -51,9 +52,6 @@ enum ECommands {
     },
     #[command(about = "List all repositories")]
     List,
-    #[command(about = "Initialize configuration")]
-    Init,
-
     Tmp(TmpArgs),
 }
 
@@ -166,7 +164,6 @@ fn main() {
         Some(ECommands::Remove { path, yes }) => commands::remove::run(&mut context, path, yes),
         Some(ECommands::Clean { yes }) => commands::clean::run(&mut context, yes),
         Some(ECommands::List) => commands::list::run(&mut context),
-        Some(ECommands::Init) => commands::init::run(&mut context),
         Some(ECommands::Tmp(tmp)) => {
             let tmp_cmd = tmp.command;
             if tmp_cmd.is_none() {

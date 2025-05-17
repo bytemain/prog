@@ -1,9 +1,10 @@
-use std::fs;
-
 use inquire::Select;
 use log::debug;
 
-use crate::{context::Context, helpers::{path, platform}};
+use crate::{
+    context::Context,
+    helpers::{path, platform},
+};
 
 fn handle_result(path: &str) {
     println!("Found: {}", path);
@@ -11,11 +12,13 @@ fn handle_result(path: &str) {
 }
 
 pub fn find_keyword(c: &Context, keyword: &str) -> Option<Vec<String>> {
+    c.auto_sync();
+
     let result = c.database_mut().find(keyword);
     if result.is_empty() {
         return None;
     }
-    let mut  options = vec![];
+    let mut options = vec![];
 
     for repo in result {
         let path: String = repo.fs_path();

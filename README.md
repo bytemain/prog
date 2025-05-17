@@ -21,7 +21,6 @@ Commands:
   remove  Remove a repository by path
   clean   Clean up repositories
   list    List all repositories
-  init    Initialize configuration
   help    Print this message or the help of the given subcommand(s)
 
 Options:
