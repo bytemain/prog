@@ -18,15 +18,10 @@ pub struct Database {
 const CURRENT_VERSION: &str = "1.0";
 
 impl Database {
-    fn reset(&mut self) {
+    pub fn reset(&mut self) {
         self.version = CURRENT_VERSION.to_string();
         self.records = IndexedRecords::new();
         self.last_sync_time = None;
-    }
-
-    pub fn clear(&mut self) {
-        self.reset();
-        self.save().unwrap();
     }
 
     fn get_db_path() -> PathBuf {
@@ -59,10 +54,6 @@ impl Database {
 
     pub fn update_last_sync_time(&mut self) {
         self.last_sync_time = Some(chrono::Utc::now().naive_utc());
-        if let Err(e) = self.save() {
-            error!("Warning: Failed to save database after updating last sync time: {}", e);
-        }
-        self.save().unwrap();
     }
 
     fn create_new_database() -> Self {
@@ -122,10 +113,6 @@ impl Database {
             full_path: full_path.to_string(),
         };
         self.records.insert(full_path, updated_record);
-
-        if let Err(e) = self.save() {
-            error!("Warning: Failed to save database after adding/updating record: {}", e);
-        }
     }
 
     pub fn find(&self, keyword: &str) -> Vec<Repo> {
@@ -146,16 +133,13 @@ impl Database {
 
     pub fn remove(&mut self, path: &str) {
         self.records.remove(path);
-        if let Err(e) = self.save() {
-            error!("Warning: Failed to save database after removing record: {}", e);
-        }
     }
 
     pub fn get_all_items(&self) -> Vec<Repo> {
         self.records.get_all().clone()
     }
 
-    fn save(&self) -> Result<(), String> {
+    pub(crate) fn save(&self) -> Result<(), String> {
         let database_file = Self::get_db_path();
         self.save_to_file(&database_file)
     }

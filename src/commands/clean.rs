@@ -1,5 +1,6 @@
 use crate::context::Context;
 use inquire::Confirm;
+use log::error;
 
 use super::printer::error::handle_inquire_error;
 
@@ -12,7 +13,7 @@ pub fn run(c: &Context, skip_confirmation: bool) {
 
         match ans {
             Ok(true) => {
-                c.database_mut().clear();
+                c.database_mut().reset();
                 println!("Successfully clean the database.");
             }
             Ok(false) => {
@@ -21,7 +22,11 @@ pub fn run(c: &Context, skip_confirmation: bool) {
             Err(e) => handle_inquire_error(e),
         }
     } else {
-        c.database_mut().clear();
+        c.database_mut().reset();
         println!("Successfully clean the database.");
+    }
+
+    if let Err(e) = c.database_mut().save() {
+        error!("Failed to save database: {}", e);
     }
 }

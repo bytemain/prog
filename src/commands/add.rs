@@ -45,6 +45,7 @@ pub fn run(c: &mut Context, url: &String, rest: &Vec<String>) {
     }
 
     c.database_mut().record_item(&base_dir, &url, &host, &name, &owner, target_path);
+    c.database_mut().save().unwrap();
 
     println!("{}", format!("Cloned to: {}", target_path).green());
     platform::clipboard::copy_path(target_path);

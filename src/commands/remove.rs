@@ -1,3 +1,5 @@
+use log::error;
+
 use crate::context::Context;
 use crate::helpers::colors::Colorize;
 use std::io::{self, Write};
@@ -27,5 +29,10 @@ pub fn run(c: &mut Context, path: PathBuf, skip_confirmation: bool) {
 
     println!("{}", format!("Removing: {}", path_str).yellow());
     c.database_mut().remove(&path_str);
-    println!("{}", "Done!".green());
+
+    if let Err(e) = c.database_mut().save() {
+        error!("Failed to save database: {}", e);
+    } else {
+        println!("{}", "Done!".green());
+    }
 }

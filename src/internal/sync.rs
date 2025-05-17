@@ -1,6 +1,6 @@
 use crate::context::Context;
 use crate::helpers::git::get_remote_url;
-use log::info;
+use log::{error, info};
 use std::fs::read_dir;
 
 #[derive(Debug, Clone)]
@@ -59,7 +59,7 @@ pub fn sync(c: &Context, silent: bool) {
     if !silent {
         info!("Deleting old database...");
     }
-    c.database_mut().clear();
+    c.database_mut().reset();
 
     if !silent {
         info!("Syncing...");
@@ -83,6 +83,10 @@ pub fn sync(c: &Context, silent: bool) {
         }
     }
     c.database_mut().update_last_sync_time();
+    if let Err(e) = c.database_mut().save() {
+        error!("Failed to save database: {}", e);
+    }
+
     if !silent {
         info!("Synced");
     }
