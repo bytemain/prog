@@ -6,6 +6,8 @@ use inquire::Select;
 use log::debug;
 use std::collections::HashSet;
 
+use super::printer::error::handle_inquire_error;
+
 fn handle_result(path: &str) {
     println!("Found: {}", path);
     platform::clipboard::copy_path(path);
@@ -64,7 +66,7 @@ pub fn query(c: &Context, keyword: &str) {
         Ok(choice) => {
             println!("{}", &choice);
         }
-        Err(_) => println!("There was an error, please try again"),
+        Err(e) => handle_inquire_error(e),
     }
 }
 
@@ -87,7 +89,7 @@ pub fn check_keyword_exists(c: &Context, keyword: &str) -> bool {
             handle_result(&choice);
             return true;
         }
-        Err(_) => println!("There was an error, please try again"),
+        Err(e) => handle_inquire_error(e),
     }
 
     false

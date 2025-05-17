@@ -1,6 +1,8 @@
 use crate::context::Context;
 use inquire::Confirm;
 
+use super::printer::error::handle_inquire_error;
+
 pub fn run(c: &Context, skip_confirmation: bool) {
     if !skip_confirmation {
         let ans = Confirm::new("You're cleaning all your repo records, continue?")
@@ -16,7 +18,7 @@ pub fn run(c: &Context, skip_confirmation: bool) {
             Ok(false) => {
                 println!("Canceled.");
             }
-            Err(_) => println!("Error with questionnaire, try again later"),
+            Err(e) => handle_inquire_error(e),
         }
     } else {
         c.database_mut().clear();

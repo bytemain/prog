@@ -6,3 +6,5 @@ pub mod list;
 pub mod remove;
 pub mod sync;
 pub mod tmp;
+
+mod printer;
