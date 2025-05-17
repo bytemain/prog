@@ -155,4 +155,5 @@ jobs:
         with:
           executable-name: prog
           target: ${{ matrix.platform.target }}
+          changes-file: ""
         if: matrix.toolchain == 'stable'
