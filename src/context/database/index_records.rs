@@ -56,8 +56,10 @@ impl IndexedRecords {
     /// # Returns
     ///
     /// * Vector of all repository records in insertion order (owned values, not references)
-    pub(crate) fn get_all(&self) -> Vec<Repo> {
-        self.records.values().cloned().collect()
+    pub(crate) fn get_all_sorted(&self) -> Vec<Repo> {
+        let mut items: Vec<Repo> = self.records.values().cloned().collect();
+        items.sort_by(|a, b| a.full_path.cmp(&b.full_path));
+        items
     }
 
     /// Creates an IndexedRecords instance from a vector of repository records

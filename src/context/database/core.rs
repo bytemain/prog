@@ -67,7 +67,7 @@ impl Data {
     pub fn find(&self, keyword: &str) -> Vec<Repo> {
         let keyword = keyword.to_lowercase();
         self.records
-            .get_all()
+            .get_all_sorted()
             .iter()
             .filter(|r| {
                 r.host.to_lowercase().contains(&keyword)
@@ -85,7 +85,7 @@ impl Data {
     }
 
     pub fn get_all_items(&self) -> Vec<Repo> {
-        self.records.get_all().clone()
+        self.records.get_all_sorted().clone()
     }
 }
 
