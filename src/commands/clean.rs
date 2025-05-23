@@ -11,19 +11,19 @@ pub fn run(c: &Context, skip_confirmation: bool) {
             .with_help_message("This won't delete your git repos in the disk")
             .prompt();
 
-        let skip = match ans {
-            Ok(true) => false,
+        let ans = match ans {
+            Ok(true) => true,
             Ok(false) => {
                 println!("Canceled.");
-                true
+                false
             }
             Err(e) => {
                 handle_inquire_error(e);
-                true
+                false
             }
         };
 
-        if skip {
+        if !ans {
             return;
         }
     }

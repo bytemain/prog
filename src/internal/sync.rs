@@ -111,14 +111,15 @@ fn read_repo_from_dir(dir: &str) -> Vec<SyncItem> {
 
 pub fn sync(c: &Context, silent: bool) {
     if !silent {
-        info!("Deleting old database...");
+        println!("Deleting old database...");
     }
     let now = Instant::now();
     c.database_mut().reset();
 
     if !silent {
-        info!("Syncing...");
+        println!("Syncing...");
     }
+
     let base_dirs = c.config().base_dirs();
 
     let repos: Vec<SyncItem> =

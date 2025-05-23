@@ -185,4 +185,17 @@ impl Database {
     pub fn size(&self) -> usize {
         self.data.records.size()
     }
+
+    /// Get a repository record by its path
+    ///
+    /// # Arguments
+    ///
+    /// * `path` - The path of the repository to get
+    ///
+    /// # Returns
+    ///
+    /// * `Option<Repo>` - The repository record if found, None otherwise
+    pub fn get_by_path(&self, path: &str) -> Option<Repo> {
+        self.data.records.get(path).cloned()
+    }
 }
