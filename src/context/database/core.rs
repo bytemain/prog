@@ -70,10 +70,7 @@ impl Data {
             .get_all_sorted()
             .iter()
             .filter(|r| {
-                r.host.to_lowercase().contains(&keyword)
-                    || r.repo.to_lowercase().contains(&keyword)
-                    || r.owner.to_lowercase().contains(&keyword)
-                    || r.base_dir.to_lowercase().contains(&keyword)
+                r.full_path.to_lowercase().contains(&keyword)
                     || r.remote_url.to_lowercase().contains(&keyword)
             })
             .cloned()
