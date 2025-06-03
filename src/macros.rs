@@ -1,3 +1,4 @@
+#[macro_export]
 macro_rules! collection {
     // map-like
     ($($k:expr => $v:expr),* $(,)?) => {{

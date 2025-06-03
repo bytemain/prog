@@ -2,8 +2,26 @@ use crate::context::Context;
 use crate::helpers::colors::Colorize;
 use crate::helpers::path::ensure_dir_exists;
 use crate::helpers::platform;
+use clap::{Args, Subcommand};
 use std::fs;
 use std::time::{Duration, SystemTime};
+
+#[derive(Debug, Args)]
+#[command(args_conflicts_with_subcommands = true)]
+pub struct TmpArgs {
+    #[command(subcommand)]
+    pub command: Option<TmpCommands>,
+}
+
+#[derive(Debug, Subcommand)]
+pub enum TmpCommands {
+    #[command(about = "Clean temporary directories")]
+    Clean,
+    #[command(about = "Create a temporary directory")]
+    Create,
+    #[command(about = "List temporary directories")]
+    List,
+}
 
 fn clean_directory<F, G>(dir: &str, duration: Duration, is_target: F, get_time: G)
 where
@@ -71,7 +89,7 @@ where
     }
 }
 
-pub fn run(c: &mut Context) {
+pub fn create(c: &Context) {
     let path = c.config().create_tmp_dir();
     let path_str = path.to_string_lossy();
     println!("{}", path.display());
@@ -79,7 +97,15 @@ pub fn run(c: &mut Context) {
     platform::clipboard::copy_path(&path_str);
 }
 
-pub fn cleanoutdate(c: &mut Context) {
+pub fn run(c: &mut Context, tmp: &TmpCommands) {
+    match tmp {
+        TmpCommands::Create => create(&c),
+        TmpCommands::Clean => cleanoutdate(&c),
+        TmpCommands::List => list_files(&c),
+    }
+}
+
+pub fn cleanoutdate(c: &Context) {
     let tmp_dir = c.config().tmp_dir();
     clean_directory(
         &tmp_dir,
@@ -89,7 +115,7 @@ pub fn cleanoutdate(c: &mut Context) {
     );
 }
 
-pub fn list_files(c: &mut Context) {
+pub fn list_files(c: &Context) {
     let tmp_dir = c.config().tmp_dir();
     let now = SystemTime::now();
     let seven_days_ago = now - Duration::from_secs(7 * 24 * 60 * 60);
