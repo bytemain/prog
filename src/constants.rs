@@ -1,5 +1,3 @@
-
-
 pub const DEFAULT_CONFIG_TOML: &str = r#"base = [
   "~/0Workspace"
 ]
