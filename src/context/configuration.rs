@@ -41,6 +41,10 @@ impl Config {
     }
 
     pub fn tmp_dir(&self) -> String {
+        if self.tmp_dir.is_empty() {
+            panic!("Please configure tmp_dir in config file");
+        }
+
         shellexpand::tilde(&self.tmp_dir).to_string()
     }
 

@@ -103,11 +103,6 @@ impl Context {
             let mut config: configuration::Config = toml::from_str(&s).unwrap();
             debug!("read config: {:?}", config);
 
-            if config.tmp_dir.is_empty() {
-                let dir = env::temp_dir();
-                config.tmp_dir = dir.to_string_lossy().to_string();
-            }
-
             if config.base.is_empty() {
                 eprintln!(
                     "{}",
