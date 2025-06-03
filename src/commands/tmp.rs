@@ -16,7 +16,7 @@ where
     match fs::read_dir(dir) {
         Ok(entries) => {
             for entry in entries.flatten() {
-                println!("{}", entry.path().display());
+                println!("Check {}", entry.path().display());
                 if let Ok(metadata) = entry.metadata() {
                     if is_target(&metadata) {
                         if let Ok(time) = get_time(&metadata) {
@@ -44,22 +44,24 @@ where
                                 }
                             }
                         }
+                    }
+                }
 
-                        let target = entry.path();
-                        // 检查目录是否为空，如果为空则删除
-                        if fs::read_dir(&target).unwrap().next().is_none() {
-                            if let Err(e) = fs::remove_dir_all(&target) {
-                                eprintln!(
-                                    "Failed to delete empty directory {}: {}",
-                                    &target.to_str().unwrap_or("N/A"),
-                                    e
-                                );
-                            } else {
-                                println!(
-                                    "Deleted empty directory {}",
-                                    &target.to_str().unwrap_or("N/A")
-                                );
-                            }
+                let target = entry.path();
+                if target.is_dir() {
+                    // 检查目录是否为空，如果为空则删除
+                    if fs::read_dir(&target).unwrap().next().is_none() {
+                        if let Err(e) = fs::remove_dir_all(&target) {
+                            eprintln!(
+                                "Failed to delete empty directory {}: {}",
+                                &target.to_str().unwrap_or("N/A"),
+                                e
+                            );
+                        } else {
+                            println!(
+                                "Deleted empty directory {}",
+                                &target.to_str().unwrap_or("N/A")
+                            );
                         }
                     }
                 }
