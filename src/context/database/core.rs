@@ -66,15 +66,58 @@ impl Data {
 
     pub fn find(&self, keyword: &str) -> Vec<Repo> {
         let keyword = keyword.to_lowercase();
-        self.records
+
+        // Get all matching records
+        let mut results: Vec<Repo> = self
+            .records
             .get_all_sorted()
             .iter()
             .filter(|r| {
                 r.full_path.to_lowercase().contains(&keyword)
                     || r.remote_url.to_lowercase().contains(&keyword)
+                    || r.repo.to_lowercase().contains(&keyword)
+                    || r.owner.to_lowercase().contains(&keyword)
             })
             .cloned()
-            .collect()
+            .collect();
+
+        // Sort results by match relevance
+        results.sort_by(|a, b| {
+            // Define match priority enum
+            #[derive(PartialEq, Eq, PartialOrd, Ord)]
+            enum MatchPriority {
+                Low,
+                Middle,
+                High,
+            }
+
+            // Define match priority function
+            let match_priority = |repo: &Repo| -> MatchPriority {
+                // Repository name exact match (highest priority)
+                if repo.repo.to_lowercase() == keyword {
+                    return MatchPriority::High;
+                }
+                // Repository name partial match (medium priority)
+                else if repo.repo.to_lowercase().contains(&keyword) {
+                    return MatchPriority::Middle;
+                }
+                // Other matches (lowest priority)
+                else {
+                    return MatchPriority::Low;
+                }
+            };
+
+            // First sort by match priority (descending)
+            let priority_cmp = match_priority(b).cmp(&match_priority(a));
+            if priority_cmp != std::cmp::Ordering::Equal {
+                return priority_cmp;
+            }
+
+            // If match priority is the same, sort by repository name alphabetically
+            a.repo.to_lowercase().cmp(&b.repo.to_lowercase())
+        });
+
+        results
     }
 
     pub fn remove(&mut self, path: &str) {

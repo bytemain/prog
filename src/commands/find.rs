@@ -26,7 +26,6 @@ pub fn find_keyword(c: &Context, keyword: &str) -> Option<Vec<String>> {
     for repo in result {
         let path: String = repo.full_path.clone();
         if path::exists(&path) {
-            debug!("exists {}", path.clone());
             options.insert(path.clone());
 
             if repo.host == keyword {
