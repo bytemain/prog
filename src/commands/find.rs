@@ -70,7 +70,7 @@ pub fn query(c: &Context, keyword: &str) {
     }
 }
 
-pub fn check_keyword_exists(c: &Context, keyword: &str) -> bool {
+pub fn find(c: &Context, keyword: &str) -> bool {
     let result = find_keyword(c, keyword).unwrap_or_default();
 
     if result.is_empty() {

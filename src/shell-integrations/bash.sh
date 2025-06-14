@@ -16,7 +16,7 @@ function __prog_p() {
             \command prog "$@"
         else
             local result
-            result="$(\command prog query -- "$@")" || return $?
+            result="$(\command prog find --query -- "$@")" || return $?
             [[ -n "$result" ]] && __prog_cd "${result}"
         fi
     fi

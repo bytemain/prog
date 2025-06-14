@@ -30,7 +30,7 @@ function __prog_p {
         else {
             $result = $null
             try {
-                $result = prog query -- @args
+                $result = prog find --query -- @args
                 if ($LASTEXITCODE -ne 0) {
                     return $LASTEXITCODE
                 }

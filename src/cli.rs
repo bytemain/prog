@@ -17,9 +17,8 @@ pub enum ECommands {
     #[command(about = "Find a repository by keyword")]
     Find {
         keyword: String,
-    },
-    Query {
-        keyword: String,
+        #[arg(short = 'q', long = "query", help = "Only query result")]
+        query: bool,
     },
     #[command(about = "Sync repositories")]
     Sync,

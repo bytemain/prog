@@ -23,11 +23,12 @@ fn main() {
 
     match cli.command {
         Some(ECommands::Add { url, rest }) => commands::add::run(&mut context, &url, &rest),
-        Some(ECommands::Find { keyword }) => {
-            commands::find::check_keyword_exists(&context, &keyword);
-        }
-        Some(ECommands::Query { keyword }) => {
-            commands::find::query(&context, &keyword);
+        Some(ECommands::Find { keyword, query }) => {
+            if query {
+                commands::find::query(&context, &keyword);
+            } else {
+                commands::find::find(&context, &keyword);
+            }
         }
         Some(ECommands::Sync) => commands::sync::run(&context),
         Some(ECommands::Import { path }) => commands::import::run(&mut context, path),
