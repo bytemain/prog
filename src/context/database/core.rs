@@ -75,8 +75,6 @@ impl Data {
             .filter(|r| {
                 r.full_path.to_lowercase().contains(&keyword)
                     || r.remote_url.to_lowercase().contains(&keyword)
-                    || r.repo.to_lowercase().contains(&keyword)
-                    || r.owner.to_lowercase().contains(&keyword)
             })
             .cloned()
             .collect();
@@ -118,14 +116,6 @@ impl Data {
         });
 
         results
-    }
-
-    pub fn remove(&mut self, path: &str) {
-        self.records.remove(path);
-    }
-
-    pub fn get_all_items(&self) -> Vec<Repo> {
-        self.records.get_all_sorted().clone()
     }
 }
 
@@ -217,10 +207,10 @@ impl Database {
         self.data.find(keyword)
     }
     pub fn remove(&mut self, path: &str) {
-        self.data.remove(path);
+        self.data.records.remove(path);
     }
     pub fn get_all_items(&self) -> Vec<Repo> {
-        self.data.get_all_items()
+        self.data.records.get_all_sorted()
     }
     pub fn size(&self) -> usize {
         self.data.records.size()

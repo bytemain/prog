@@ -3,7 +3,6 @@ use crate::{
     helpers::{path, platform},
 };
 use inquire::Select;
-use log::debug;
 use std::collections::HashSet;
 
 use super::printer::error::handle_inquire_error;
@@ -20,6 +19,7 @@ pub fn find_keyword(c: &Context, keyword: &str) -> Option<Vec<String>> {
     if result.is_empty() {
         return None;
     }
+
     let mut options = HashSet::<String>::new();
 
     let mut should_sync = false;

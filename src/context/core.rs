@@ -11,7 +11,6 @@ use std::cell::LazyCell;
 use std::cell::OnceCell;
 use std::cell::RefCell;
 use std::cell::{Ref, RefMut};
-use std::env;
 use std::io::Write;
 use std::path::PathBuf;
 use std::process::exit;
@@ -100,7 +99,7 @@ impl Context {
             }
 
             let s = std::fs::read_to_string(&config_file_path).unwrap();
-            let mut config: configuration::Config = toml::from_str(&s).unwrap();
+            let config: configuration::Config = toml::from_str(&s).unwrap();
             debug!("read config: {:?}", config);
 
             if config.base.is_empty() {
