@@ -20,8 +20,7 @@ pub fn get_config_path(file: &str) -> PathBuf {
 }
 
 pub fn expand_path(path: &str) -> PathBuf {
-    let path = shellexpand::tilde(path).into_owned();
-    PathBuf::from(path)
+    PathBuf::from(expand_tilde(path))
 }
 
 pub fn ensure_dir_exists(path: &PathBuf) {
@@ -87,4 +86,72 @@ pub fn remove_dir_with_empty_parents(
     }
 
     Ok(())
+}
+
+/// Expands the tilde character (~) in a path string to the user's home directory
+///
+/// # Arguments
+/// * `path` - A string slice that might contain a tilde (~) at the beginning
+///
+/// # Returns
+/// A String with the tilde expanded to the user's home directory path
+///
+/// # Examples
+/// ```
+/// let expanded = expand_tilde("~/Documents");
+/// // Result might be something like "/home/username/Documents" on Linux/macOS
+/// // or "C:\Users\username\Documents" on Windows
+/// ```
+pub fn expand_tilde(path: &str) -> String {
+    if path.starts_with("~") {
+        if let Some(home_dir) = dirs::home_dir() {
+            if path.len() > 1 {
+                // Handle ~/rest/of/path
+                if let Some(rest) = path.strip_prefix("~/") {
+                    return home_dir.join(rest).to_string_lossy().to_string();
+                }
+                // Handle ~rest/of/path (without slash)
+                else if let Some(rest) = path.strip_prefix('~') {
+                    return home_dir.join(rest).to_string_lossy().to_string();
+                }
+            }
+            // Just ~ by itself
+            return home_dir.to_string_lossy().to_string();
+        }
+    }
+    // No tilde or couldn't get home directory
+    path.to_string()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_expand_tilde() {
+        // Get the home directory for comparison
+        let home = dirs::home_dir().unwrap().to_string_lossy().to_string();
+
+        // Test case 1: Just the tilde
+        assert_eq!(expand_tilde("~"), home);
+
+        // Test case 2: Tilde with slash and path
+        let docs_path = format!("{}/Documents", home);
+        assert_eq!(expand_tilde("~/Documents"), docs_path);
+
+        // Test case 3: Path without tilde should remain unchanged
+        let normal_path = "/usr/local/bin";
+        assert_eq!(expand_tilde(normal_path), normal_path);
+
+        // Test case 4: Empty string should remain unchanged
+        assert_eq!(expand_tilde(""), "");
+
+        // Test case 5: Tilde in the middle of a path should remain unchanged
+        let middle_tilde = "/usr/~local/bin";
+        assert_eq!(expand_tilde(middle_tilde), middle_tilde);
+
+        // Test case 6: Tilde without slash
+        let no_slash_path = format!("{}/test", home);
+        assert_eq!(expand_tilde("~test"), no_slash_path);
+    }
 }

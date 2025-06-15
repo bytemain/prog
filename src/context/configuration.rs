@@ -1,4 +1,4 @@
-use crate::helpers::{path::PROGRAM, rand::get_random_string};
+use crate::helpers::{path::{PROGRAM, expand_tilde}, rand::get_random_string};
 use log::info;
 use serde::Deserialize;
 use std::{collections::HashMap, path::PathBuf};
@@ -24,7 +24,7 @@ impl Config {
         let mut base_dirs = Vec::new();
 
         for base_dir in &self.base {
-            base_dirs.push(shellexpand::tilde(base_dir).to_string());
+            base_dirs.push(expand_tilde(base_dir));
         }
 
         base_dirs
@@ -45,7 +45,7 @@ impl Config {
             panic!("Please configure tmp_dir in config file");
         }
 
-        shellexpand::tilde(&self.tmp_dir).to_string()
+        expand_tilde(&self.tmp_dir)
     }
 
     pub fn create_tmp_dir(&self) -> PathBuf {
