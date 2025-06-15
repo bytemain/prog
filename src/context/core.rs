@@ -29,7 +29,13 @@ impl Context {
             LazyCell::new(|| get_config_path(constants::CONFIG_TOML_FILE));
         let config: OnceCell<configuration::Config> = OnceCell::new();
 
-        Self { config, db, config_file_path }
+        let ctx: Context = Self { config, db, config_file_path };
+
+        if ctx.database().size() == 0 {
+            ctx.sync_silent();
+        }
+
+        ctx
     }
 
     #[inline]

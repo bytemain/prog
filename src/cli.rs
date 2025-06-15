@@ -70,6 +70,9 @@ impl ShellScriptName for Shell {
 }
 
 impl Cli {
+    pub fn new() -> Self {
+        Cli::parse()
+    }
     pub fn activate(shell: Shell) {
         let mut cmd = Cli::command();
         let bin_name = &cmd.get_name().to_string();

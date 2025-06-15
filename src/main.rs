@@ -6,30 +6,18 @@ mod helpers;
 mod internal;
 mod macros;
 
-use clap::Parser;
-
 use crate::cli::{Cli, ECommands};
 
 fn main() {
-    let cli = Cli::parse();
     // use PROG_LOG="debug" to enable debug logs
     env_logger::Builder::new().parse_env("PROG_LOG").format_timestamp(None).init();
 
     let mut context = context::Context::new();
 
-    if context.database().size() == 0 {
-        context.sync_silent();
-    }
-
+    let cli = Cli::new();
     match cli.command {
         Some(ECommands::Add { url, rest }) => commands::add::run(&mut context, &url, &rest),
-        Some(ECommands::Find { keyword, query }) => {
-            if query {
-                commands::find::query(&context, &keyword);
-            } else {
-                commands::find::find(&context, &keyword);
-            }
-        }
+        Some(ECommands::Find { keyword, query }) => commands::find::run(&context, &keyword, query),
         Some(ECommands::Sync) => commands::sync::run(&context),
         Some(ECommands::Import { path }) => commands::import::run(&mut context, path),
         Some(ECommands::Remove { path, yes }) => commands::remove::run(&mut context, path, yes),

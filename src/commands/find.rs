@@ -1,7 +1,9 @@
 use crate::{
+    cli::ECommands,
     context::Context,
     helpers::{path, platform},
 };
+use clap::builder::Str;
 use inquire::Select;
 use std::collections::HashSet;
 
@@ -45,6 +47,14 @@ pub fn find_keyword(c: &Context, keyword: &str) -> Option<Vec<String>> {
     }
 
     Some(options.into_iter().collect())
+}
+
+pub fn run(c: &Context, keyword: &str, _query: bool) {
+    if _query {
+        query(&c, &keyword);
+    } else {
+        find(&c, &keyword);
+    }
 }
 
 pub fn query(c: &Context, keyword: &str) {
