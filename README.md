@@ -8,34 +8,15 @@ cargo install --git https://github.com/bytemain/prog.git
 
 ## Usage
 
-```sh
-> prog --help
-Usage: prog [COMMAND]
-
-Commands:
-  add     Add a new repository
-  find    Find a repository by keyword
-  sync    Sync repositories
-  shell   Activate shell
-  import  Import repositories from a path
-  remove  Remove a repository by path
-  clean   Clean up repositories
-  list    List all repositories
-  help    Print this message or the help of the given subcommand(s)
-
-Options:
-  -h, --help     Print help
-  -V, --version  Print version
-```
-
-You can use `prog` to manage your repositories.
+You can use `prog` to manage your repositories, it can clone repositories according to the path rules.
 
 For example:
 
 ```sh
 > prog add https://github.com/bytemain/prog
-# The repository will be cloned to ~/0Workspace/github.com/bytemain/prog
 ```
+
+The repository will be cloned to `~/0Workspace/github.com/bytemain/prog`.
 
 To change the base directory, modify the `base` field in the configuration file `~/.prog/config.toml`:
 
