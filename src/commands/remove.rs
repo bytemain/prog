@@ -12,9 +12,8 @@ pub fn run(c: &mut Context, path: PathBuf, skip_confirmation: bool) {
 
     // If not skipping confirmation, prompt the user
     if !skip_confirmation {
-        let ans = Confirm::new("You're removing a repo record, continue?")
+        let ans = Confirm::new("You're removing a repo from disk, continue?")
             .with_default(false)
-            .with_help_message("This won't delete your git repos in the disk")
             .prompt();
 
         let ans = match ans {
