@@ -54,3 +54,6 @@ release:
     ---
 
     Released by [GoReleaser](https://github.com/goreleaser/goreleaser).
+
+universal_binaries:
+  - replace: true
