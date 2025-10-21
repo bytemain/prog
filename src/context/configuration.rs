@@ -1,4 +1,7 @@
-use crate::helpers::{path::{PROGRAM, expand_tilde}, rand::get_random_string};
+use crate::helpers::{
+    path::{expand_tilde, PROGRAM},
+    rand::get_random_string,
+};
 use log::info;
 use serde::Deserialize;
 use std::{collections::HashMap, path::PathBuf};
