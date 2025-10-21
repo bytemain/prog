@@ -1,159 +1,43 @@
-name: Release
+# .github/workflows/release.yml
+name: goreleaser
 
 on:
+  pull_request:
   push:
-    branches:
-      - "release/*"
-  workflow_dispatch:
+    # run only against tags
+    tags:
+      - "*"
 
-env:
-  CRATE_NAME: prog
-  GITHUB_TOKEN: ${{ github.token }}
-  RUST_BACKTRACE: 1
+permissions:
+  contents: write
+  # packages: write
+  # issues: write
+  # id-token: write
 
 jobs:
-  test:
-    name: ${{ matrix.platform.os-name }} with rust ${{ matrix.toolchain }}
-    runs-on: ${{ matrix.platform.runs-on }}
-    strategy:
-      fail-fast: false
-      matrix:
-        platform:
-          - os-name: FreeBSD-x86_64
-            runs-on: ubuntu-24.04
-            target: x86_64-unknown-freebsd
-            bin: prog
-            name: prog-FreeBSD-x86_64.tar.gz
-            skip-tests: true
-          - os-name: Linux-x86_64
-            runs-on: ubuntu-24.04
-            target: x86_64-unknown-linux-musl
-            bin: prog
-            name: prog-Linux-x86_64-musl.tar.gz
-          - os-name: Linux-aarch64
-            runs-on: ubuntu-24.04
-            target: aarch64-unknown-linux-musl
-            bin: prog
-            name: prog-Linux-aarch64-musl.tar.gz
-          - os-name: Linux-arm
-            runs-on: ubuntu-24.04
-            target: arm-unknown-linux-musleabi
-            bin: prog
-            name: prog-Linux-arm-musl.tar.gz
-          - os-name: Linux-i686
-            runs-on: ubuntu-24.04
-            target: i686-unknown-linux-musl
-            bin: prog
-            name: prog-Linux-i686-musl.tar.gz
-            skip-tests: true
-          - os-name: Linux-powerpc
-            runs-on: ubuntu-24.04
-            target: powerpc-unknown-linux-gnu
-            bin: prog
-            name: prog-Linux-powerpc-gnu.tar.gz
-            skip-tests: true
-          - os-name: Linux-powerpc64
-            runs-on: ubuntu-24.04
-            target: powerpc64-unknown-linux-gnu
-            bin: prog
-            name: prog-Linux-powerpc64-gnu.tar.gz
-            skip-tests: true
-          - os-name: Linux-powerpc64le
-            runs-on: ubuntu-24.04
-            target: powerpc64le-unknown-linux-gnu
-            bin: prog
-            name: prog-Linux-powerpc64le.tar.gz
-            skip-tests: true
-          - os-name: Linux-riscv64
-            runs-on: ubuntu-24.04
-            target: riscv64gc-unknown-linux-gnu
-            bin: prog
-            name: prog-Linux-riscv64gc-gnu.tar.gz
-          - os-name: Linux-s390x
-            runs-on: ubuntu-24.04
-            target: s390x-unknown-linux-gnu
-            bin: prog
-            name: prog-Linux-s390x-gnu.tar.gz
-            skip-tests: true
-          - os-name: NetBSD-x86_64
-            runs-on: ubuntu-24.04
-            target: x86_64-unknown-netbsd
-            bin: prog
-            name: prog-NetBSD-x86_64.tar.gz
-            skip-tests: true
-          - os-name: Windows-aarch64
-            runs-on: windows-latest
-            target: aarch64-pc-windows-msvc
-            bin: prog.exe
-            name: prog-Windows-aarch64.zip
-            skip-tests: true
-          - os-name: Windows-i686
-            runs-on: windows-latest
-            target: i686-pc-windows-msvc
-            bin: prog.exe
-            name: prog-Windows-i686.zip
-            skip-tests: true
-          - os-name: Windows-x86_64
-            runs-on: windows-latest
-            target: x86_64-pc-windows-msvc
-            bin: prog.exe
-            name: prog-Windows-x86_64.zip
-          - os-name: macOS-x86_64
-            runs-on: macOS-latest
-            target: x86_64-apple-darwin
-            bin: prog
-            name: prog-Darwin-x86_64.tar.gz
-          - os-name: macOS-aarch64
-            runs-on: macOS-latest
-            target: aarch64-apple-darwin
-            bin: prog
-            name: prog-Darwin-aarch64.tar.gz
-        toolchain:
-          - stable
-        include:
-          - platform:
-              os-name: Linux-x86_64
-              runs-on: ubuntu-24.04
-              target: x86_64-unknown-linux-musl
-              bin: prog
-            toolchain: beta
-          - platform:
-              os-name: Linux-x86_64
-              runs-on: ubuntu-24.04
-              target: x86_64-unknown-linux-musl
-              bin: prog
-            toolchain: nightly
+  goreleaser:
+    runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - name: Run tests
-        uses: houseabsolute/actions-rust-cross@v1
+      - name: Checkout
+        uses: actions/checkout@v4
         with:
-          command: "test"
-          target: ${{ matrix.platform.target }}
-          toolchain: ${{ matrix.toolchain }}
-          args: "--locked --release"
-          # This works around the issue in https://github.com/cross-rs/cross/issues/1450. The `main`
-          # branch updated its images long ago, but the last cross release, 0.2.5, is still using
-          # Ubuntu 16.04 as the base for some images.
-          #
-          # This also contains a fix for https://github.com/cross-rs/cross/issues/1619. Previously,
-          # we used an earlier commit, but this started erroring because some dependencies included
-          # cross config.
-          cross-version: 107433fa9d71d7eb506cd5bf5467bab89edb7a52
-        if: ${{ !matrix.platform.skip-tests }}
-      - name: Build binary
-        uses: houseabsolute/actions-rust-cross@v1
+          fetch-depth: 0
+      - name: Set up Go
+        uses: actions/setup-go@v5
         with:
-          command: "build"
-          target: ${{ matrix.platform.target }}
-          toolchain: ${{ matrix.toolchain }}
-          args: "--locked --release"
-          strip: true
-          cross-version: 107433fa9d71d7eb506cd5bf5467bab89edb7a52
-      - name: Publish artifacts and release
-        uses: houseabsolute/actions-rust-release@v0
+          go-version: stable
+      - uses: mlugg/setup-zig@v2
         with:
-          executable-name: prog
-          target: ${{ matrix.platform.target }}
-          changes-file: ""
-        if: matrix.toolchain == 'stable'
+          version: 0.15.1
+      # More assembly might be required: Docker logins, GPG, etc.
+      # It all depends on your needs.
+      - name: Run GoReleaser
+        uses: goreleaser/goreleaser-action@v6
+        with:
+          # either 'goreleaser' (default) or 'goreleaser-pro'
+          distribution: goreleaser
+          # 'latest', 'nightly', or a semver
+          version: "~> v2"
+          args: release --clean
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
