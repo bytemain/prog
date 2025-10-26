@@ -1,6 +1,6 @@
 use crate::context::Context;
 use crate::helpers::git::get_remote_url;
-use git_url_parse::GitUrl;
+use crate::helpers::git::parse_git_url;
 use ignore::WalkBuilder;
 use log::error;
 use rayon::prelude::*;
@@ -47,9 +47,12 @@ fn read_repo_from_dir(dir: &str) -> Vec<SyncItem> {
                             return ignore::WalkState::Continue;
                         }
 
-                        match GitUrl::parse(&remote_url_str) {
-                            Ok(url_parsed) => {
-                                if url_parsed.host.is_none() || url_parsed.owner.is_none() || url_parsed.name.is_empty() {
+                        match parse_git_url(&remote_url_str) {
+                            Some(url_parsed) => {
+                                if url_parsed.host.as_deref().map(|s| s.trim().is_empty()).unwrap_or(true)
+                                    || url_parsed.owner.as_deref().map(|s| s.trim().is_empty()).unwrap_or(true)
+                                    || url_parsed.name.trim().is_empty()
+                                {
                                     log::error!(
                                         "Invalid Git URL '{}' (missing host, owner, or repo name) for path: {}. Skipping item.",
                                         remote_url_str,
@@ -76,12 +79,11 @@ fn read_repo_from_dir(dir: &str) -> Vec<SyncItem> {
                                     return ignore::WalkState::Quit; // Critical error in channel communication.
                                 }
                             }
-                            Err(e) => {
+                            None => {
                                 log::error!(
-                                    "Failed to parse remote URL '{}' for git repository at '{}': {}. Skipping item.",
+                                    "Failed to parse remote URL '{}' for git repository at '{}'. Skipping item.",
                                     remote_url_str,
-                                    full_path_str,
-                                    e
+                                    full_path_str
                                 );
                                 return ignore::WalkState::Continue;
                             }

@@ -2,15 +2,21 @@ use std::path::Path;
 
 use crate::helpers::colors::Colorize;
 use crate::helpers::git::remote_url_is_valid;
+use crate::helpers::git::parse_git_url;
 use crate::{context::Context, helpers::platform};
-use git_url_parse::GitUrl;
 use log::debug;
 
 pub fn run(c: &mut Context, url: &str, rest: &[String]) {
     let base_dir = c.get_base_dir().unwrap();
     let url = c.config().replace_alias(url.to_owned());
 
-    let url_parsed = GitUrl::parse(&url).unwrap();
+    let url_parsed = match parse_git_url(&url) {
+        Some(p) => p,
+        None => {
+            eprintln!("{}", format!("Invalid git url: {}", url).red());
+            return;
+        }
+    };
     debug!("url parsed: {:#?}", url_parsed);
 
     if !remote_url_is_valid(&url_parsed) {

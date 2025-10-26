@@ -8,7 +8,6 @@ serde = { version = "1.0.214", features = ["derive"] }
 clap = { version = "4.5.18", features = ["derive"] }
 clap_complete = "4.5.29"
 anyhow = "1.0.70"
-git-url-parse = { git = "https://github.com/tjtelan/git-url-parse-rs.git", rev = "23031bfa3e7d0cbba17a2ccbe26f348c35f5c524" }
 chrono = { version = "0.4.26", features = ["serde"] }
 dirs = "5.0.1"
 log = "0.4.22"
