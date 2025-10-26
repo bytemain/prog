@@ -1,6 +1,7 @@
 use std::path::Path;
 
 use crate::helpers::colors::Colorize;
+use crate::helpers::git::remote_url_is_valid;
 use crate::{context::Context, helpers::platform};
 use git_url_parse::GitUrl;
 use log::debug;
@@ -12,7 +13,7 @@ pub fn run(c: &mut Context, url: &str, rest: &[String]) {
     let url_parsed = GitUrl::parse(&url).unwrap();
     debug!("url parsed: {:#?}", url_parsed);
 
-    if url_parsed.host.is_none() || url_parsed.owner.is_none() {
+    if !remote_url_is_valid(&url_parsed) {
         eprintln!("{}", format!("Invalid git url: {}", url).red());
         return;
     }
