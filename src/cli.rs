@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 use clap::{Command, CommandFactory, Parser, Subcommand};
-use clap_complete::{generate, Shell};
+use clap_complete::{Shell, generate};
 use std::io::{self, Write};
 
 use crate::{commands, helpers::template::render_template};
@@ -87,11 +87,27 @@ impl Cli {
 
         // transform commands to if check
         // [[ "$1" = commands.0 ]] || [[ "$1" = commands.1 ]] ||...
-        let mut if_check = vec![];
-        for command in commands {
-            if_check.push(format!("[[ \"$1\" = \"{}\" ]]", command));
-        }
-        let if_check_statement = if_check.join(" || ");
+        let if_check_statement = match shell {
+            Shell::PowerShell => {
+                // In PowerShell, test first arg against known subcommands or hyphen options
+                let mut checks = Vec::new();
+                for command in &commands {
+                    checks.push(format!("$args[0] -eq '{}'", command));
+                }
+                checks.push(String::from("$args[0].StartsWith('-')"));
+                format!("($args.Count -ge 1) -and ({})", checks.join(" -or "))
+            }
+            _ => {
+                // Bash/Zsh style conditions
+                let mut if_check = vec![];
+                for command in &commands {
+                    if_check.push(format!("[[ \"$1\" = \"{}\" ]]", command));
+                }
+                // Detect hyphen-prefixed options (e.g., --help, -h) in bash/zsh
+                if_check.push(String::from("[[ \"$1\" == -* ]]"));
+                if_check.join(" || ")
+            }
+        };
 
         let command = "p";
 
