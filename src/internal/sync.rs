@@ -2,7 +2,7 @@ use crate::context::Context;
 use crate::helpers::git::get_remote_url;
 use git_url_parse::GitUrl;
 use ignore::WalkBuilder;
-use log::{error, info};
+use log::error;
 use rayon::prelude::*;
 use std::{sync::mpsc::channel, time::Instant};
 
