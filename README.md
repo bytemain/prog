@@ -3,7 +3,7 @@
 ## Installation
 
 ```sh
-cargo install --git https://github.com/bytemain/prog.git
+cargo +nightly install --git https://github.com/bytemain/prog.git
 ```
 
 ## Usage
