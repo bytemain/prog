@@ -4,6 +4,7 @@ use std::fmt;
 // ANSI color codes
 const RED: &str = "\x1b[31m";
 const GREEN: &str = "\x1b[32m";
+#[allow(dead_code)]
 const YELLOW: &str = "\x1b[33m";
 const BLUE: &str = "\x1b[34m";
 const RESET: &str = "\x1b[0m";
@@ -63,6 +64,7 @@ impl fmt::Display for ColoredString {
 pub trait Colorize {
     fn red(self) -> ColoredString;
     fn green(self) -> ColoredString;
+    #[allow(dead_code)]
     fn yellow(self) -> ColoredString;
     fn blue(self) -> ColoredString;
 }
