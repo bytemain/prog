@@ -34,6 +34,10 @@ fn handle_result(item: &FoundItem) {
     platform::clipboard::copy_path(&item.file_path);
 }
 
+fn print_found_item_path(item: &FoundItem) {
+    println!("{}", item.file_path);
+}
+
 pub fn find_keyword(c: &Context, keyword: &str) -> Option<Vec<FoundItem>> {
     c.auto_sync_silent();
 
@@ -97,7 +101,7 @@ pub fn query(c: &Context, keyword: &str) {
     }
 
     if result.len() == 1 {
-        println!("{}", &result[0]);
+        print_found_item_path(&result[0]);
         return;
     }
 
@@ -105,7 +109,7 @@ pub fn query(c: &Context, keyword: &str) {
 
     match ans {
         Ok(choice) => {
-            println!("{}", &choice);
+            print_found_item_path(&choice);
         }
         Err(e) => handle_inquire_error(e),
     }
