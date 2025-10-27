@@ -88,6 +88,36 @@ pub fn remove_dir_with_empty_parents(
     Ok(())
 }
 
+/// Contracts a path by replacing the home directory with tilde (~)
+///
+/// # Arguments
+/// * `path` - A string slice that might contain the user's home directory path
+///
+/// # Returns
+/// A String with the home directory path replaced with ~ if it starts with home directory
+///
+/// # Examples
+/// ```
+/// let contracted = contract_tilde("/home/username/Documents");
+/// // Result would be "~/Documents"
+/// ```
+pub fn contract_tilde(path: &str) -> String {
+    if let Some(home_dir) = dirs::home_dir() {
+        let home_str = home_dir.to_string_lossy();
+        if path.starts_with(home_str.as_ref()) {
+            if path.len() == home_str.len() {
+                // Path is exactly the home directory
+                return "~".to_string();
+            } else if path.chars().nth(home_str.len()) == Some('/') {
+                // Path starts with home directory followed by a slash
+                return format!("~{}", &path[home_str.len()..]);
+            }
+        }
+    }
+    // No home directory found or path doesn't start with home directory
+    path.to_string()
+}
+
 /// Expands the tilde character (~) in a path string to the user's home directory
 ///
 /// # Arguments
@@ -153,5 +183,33 @@ mod tests {
         // Test case 6: Tilde without slash
         let no_slash_path = format!("{}/test", home);
         assert_eq!(expand_tilde("~test"), no_slash_path);
+    }
+
+    #[test]
+    fn test_contract_tilde() {
+        // Get the home directory for comparison
+        let home = dirs::home_dir().unwrap().to_string_lossy().to_string();
+
+        // Test case 1: Just the home directory
+        assert_eq!(contract_tilde(&home), "~");
+
+        // Test case 2: Home directory with path
+        let docs_path = format!("{}/Documents", home);
+        assert_eq!(contract_tilde(&docs_path), "~/Documents");
+
+        // Test case 3: Path not starting with home directory should remain unchanged
+        let normal_path = "/usr/local/bin";
+        assert_eq!(contract_tilde(normal_path), normal_path);
+
+        // Test case 4: Empty string should remain unchanged
+        assert_eq!(contract_tilde(""), "");
+
+        // Test case 5: Path that contains home directory but doesn't start with it
+        let middle_home = format!("/usr{}/bin", home);
+        assert_eq!(contract_tilde(&middle_home), middle_home);
+
+        // Test case 6: Nested path under home directory
+        let nested_path = format!("{}/Documents/Projects/rust", home);
+        assert_eq!(contract_tilde(&nested_path), "~/Documents/Projects/rust");
     }
 }

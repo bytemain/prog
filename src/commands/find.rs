@@ -17,20 +17,17 @@ pub struct FoundItem {
 
 impl Display for FoundItem {
     fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
+        let display_path = path::contract_tilde(&self.file_path);
         if self.branch.trim().is_empty() {
-            write!(f, "{}", self.file_path)
+            write!(f, "{}", display_path)
         } else {
-            write!(f, "{} [branch:{}]", self.file_path, self.branch)
+            write!(f, "{} @{}", display_path, self.branch)
         }
     }
 }
 
 fn handle_result(item: &FoundItem) {
-    if item.branch.trim().is_empty() {
-        println!("Found: {}", item.file_path);
-    } else {
-        println!("Found: {} [branch:{}]", item.file_path, item.branch);
-    }
+    println!("Found: {}", item);
     platform::clipboard::copy_path(&item.file_path);
 }
 
