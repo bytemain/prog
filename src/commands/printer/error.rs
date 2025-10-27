@@ -1,14 +1,14 @@
 pub fn handle_inquire_error(e: inquire::InquireError) {
-    println!();
+    eprintln!();
     match e {
         inquire::InquireError::OperationCanceled => {
-            println!("operation canceled");
+            eprintln!("operation canceled");
         }
         inquire::InquireError::OperationInterrupted => {
-            println!("operation interrupted");
+            eprintln!("operation interrupted");
         }
         _ => {
-            println!("unknown error: {}", e);
+            eprintln!("unknown error: {}", e);
         }
     }
 }
