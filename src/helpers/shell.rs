@@ -2,6 +2,7 @@ use std::process::{Command, Stdio};
 
 use anyhow::bail;
 
+#[allow(dead_code)]
 pub(crate) fn run(cmd: &str) -> anyhow::Result<(), anyhow::Error> {
     let mut child = Command::new("bash")
         .arg("-c")
