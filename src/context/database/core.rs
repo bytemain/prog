@@ -229,3 +229,111 @@ impl Database {
         self.data.records.get(path).cloned()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn create_test_data() -> Data {
+        let mut data = Data::new();
+        // Add several repos with different names to test sorting
+        data.record_item(
+            "/base",
+            "https://github.com/user/vscode.git",
+            "github.com",
+            "vscode",
+            "user",
+            "/base/github.com/user/vscode",
+        );
+        data.record_item(
+            "/base",
+            "https://github.com/user/prog.git",
+            "github.com",
+            "prog",
+            "user",
+            "/base/github.com/user/prog",
+        );
+        data.record_item(
+            "/base",
+            "https://github.com/user/prog-cli.git",
+            "github.com",
+            "prog-cli",
+            "user",
+            "/base/github.com/user/prog-cli",
+        );
+        data.record_item(
+            "/base",
+            "https://github.com/user/my-prog-tools.git",
+            "github.com",
+            "my-prog-tools",
+            "user",
+            "/base/github.com/user/my-prog-tools",
+        );
+        data
+    }
+
+    #[test]
+    fn test_find_exact_match_first() {
+        let data = create_test_data();
+        
+        // Search for "prog" should return "prog" as exact match first
+        let results = data.find("prog");
+        
+        assert!(!results.is_empty(), "Should find results");
+        assert_eq!(results[0].repo, "prog", "Exact match 'prog' should be first");
+    }
+
+    #[test]
+    fn test_find_partial_match_ordering() {
+        let data = create_test_data();
+        
+        // Search for "prog" should have partial matches after exact match
+        let results = data.find("prog");
+        
+        // First result should be exact match
+        assert_eq!(results[0].repo, "prog", "Exact match should be first");
+        
+        // The rest should be partial matches (repos containing "prog")
+        let partial_matches: Vec<&str> = results.iter().skip(1).map(|r| r.repo.as_str()).collect();
+        assert!(partial_matches.contains(&"prog-cli") || partial_matches.contains(&"my-prog-tools"),
+            "Partial matches should follow exact match");
+    }
+
+    #[test]
+    fn test_find_alphabetical_within_same_priority() {
+        let data = create_test_data();
+        
+        // Search for "prog" - partial matches should be alphabetically sorted
+        let results = data.find("prog");
+        
+        // Skip the exact match ("prog")
+        let partial_matches: Vec<&str> = results.iter()
+            .filter(|r| r.repo != "prog")
+            .map(|r| r.repo.as_str())
+            .collect();
+        
+        // Verify alphabetical order among partial matches
+        let mut sorted_matches = partial_matches.clone();
+        sorted_matches.sort();
+        
+        assert_eq!(partial_matches, sorted_matches, 
+            "Partial matches should be alphabetically sorted");
+    }
+
+    #[test]
+    fn test_find_order_is_deterministic() {
+        let data = create_test_data();
+        
+        // Run find multiple times and verify the order is always the same
+        let results1 = data.find("prog");
+        let results2 = data.find("prog");
+        let results3 = data.find("prog");
+        
+        let order1: Vec<&str> = results1.iter().map(|r| r.repo.as_str()).collect();
+        let order2: Vec<&str> = results2.iter().map(|r| r.repo.as_str()).collect();
+        let order3: Vec<&str> = results3.iter().map(|r| r.repo.as_str()).collect();
+        
+        assert_eq!(order1, order2, "Find results should be deterministic");
+        assert_eq!(order2, order3, "Find results should be deterministic");
+    }
+}
