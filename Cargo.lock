@@ -653,6 +653,7 @@ dependencies = [
  "random-string",
  "rayon",
  "serde",
+ "strsim",
  "tempfile",
  "toml",
 ]
