@@ -8,6 +8,7 @@ auto_sync_interval_secs = 3600
 "github://" = "https://github.com/"
 "gitlab://" = "https://gitlab.com/"
 "bitbucket://" = "https://bitbucket.org/"
+"codeberg://" = "https://codeberg.org/"
 "#;
 
 pub const DATABASE_FILE: &str = "data.toml";
