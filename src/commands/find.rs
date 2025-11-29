@@ -3,10 +3,10 @@ use crate::{
     helpers::{git, path, platform},
 };
 use inquire::Select;
+use linked_hash_map::LinkedHashMap;
 
 use super::printer::error::handle_inquire_error;
 
-use std::collections::HashMap;
 use std::fmt::{Display, Formatter, Result as FmtResult};
 
 #[derive(Clone, Debug)]
@@ -43,7 +43,8 @@ pub fn find_keyword(c: &Context, keyword: &str) -> Option<Vec<FoundItem>> {
         return None;
     }
 
-    let mut options = HashMap::<String, FoundItem>::new();
+    // Use LinkedHashMap to preserve the order from database query (sorted by relevance)
+    let mut options = LinkedHashMap::<String, FoundItem>::new();
 
     let mut should_sync = false;
     for repo in result {
@@ -79,7 +80,7 @@ pub fn find_keyword(c: &Context, keyword: &str) -> Option<Vec<FoundItem>> {
         c.sync_silent();
     }
 
-    Some(options.into_values().collect())
+    Some(options.into_iter().map(|(_, v)| v).collect())
 }
 
 pub fn run(c: &Context, keyword: &str, _query: bool) {

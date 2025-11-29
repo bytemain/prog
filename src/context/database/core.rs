@@ -8,6 +8,7 @@ use serde::{Deserialize, Serialize};
 use std::fs::File;
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
+use strsim::levenshtein;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Data {
@@ -79,39 +80,19 @@ impl Data {
             .cloned()
             .collect();
 
-        // Sort results by match relevance
+        // Sort results by Levenshtein distance (similarity to keyword)
         results.sort_by(|a, b| {
-            // Define match priority enum
-            #[derive(PartialEq, Eq, PartialOrd, Ord)]
-            enum MatchPriority {
-                Low,
-                Middle,
-                High,
+            // Calculate Levenshtein distance for repo names
+            let dist_a = levenshtein(&a.repo.to_lowercase(), &keyword);
+            let dist_b = levenshtein(&b.repo.to_lowercase(), &keyword);
+
+            // Sort by distance (lower is better/more similar)
+            let dist_cmp = dist_a.cmp(&dist_b);
+            if dist_cmp != std::cmp::Ordering::Equal {
+                return dist_cmp;
             }
 
-            // Define match priority function
-            let match_priority = |repo: &Repo| -> MatchPriority {
-                // Repository name exact match (highest priority)
-                if repo.repo.to_lowercase() == keyword {
-                    return MatchPriority::High;
-                }
-                // Repository name partial match (medium priority)
-                else if repo.repo.to_lowercase().contains(&keyword) {
-                    return MatchPriority::Middle;
-                }
-                // Other matches (lowest priority)
-                else {
-                    return MatchPriority::Low;
-                }
-            };
-
-            // First sort by match priority (descending)
-            let priority_cmp = match_priority(b).cmp(&match_priority(a));
-            if priority_cmp != std::cmp::Ordering::Equal {
-                return priority_cmp;
-            }
-
-            // If match priority is the same, sort by repository name alphabetically
+            // If distances are the same, sort by repository name alphabetically
             a.repo.to_lowercase().cmp(&b.repo.to_lowercase())
         });
 
@@ -227,5 +208,142 @@ impl Database {
     /// * `Option<Repo>` - The repository record if found, None otherwise
     pub fn get_by_path(&self, path: &str) -> Option<Repo> {
         self.data.records.get(path).cloned()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn create_test_data() -> Data {
+        let mut data = Data::new();
+        // Add several repos with different names to test sorting
+        data.record_item(
+            "/base",
+            "https://github.com/user/vscode.git",
+            "github.com",
+            "vscode",
+            "user",
+            "/base/github.com/user/vscode",
+        );
+        data.record_item(
+            "/base",
+            "https://github.com/user/prog.git",
+            "github.com",
+            "prog",
+            "user",
+            "/base/github.com/user/prog",
+        );
+        data.record_item(
+            "/base",
+            "https://github.com/user/prog-cli.git",
+            "github.com",
+            "prog-cli",
+            "user",
+            "/base/github.com/user/prog-cli",
+        );
+        data.record_item(
+            "/base",
+            "https://github.com/user/my-prog-tools.git",
+            "github.com",
+            "my-prog-tools",
+            "user",
+            "/base/github.com/user/my-prog-tools",
+        );
+        data
+    }
+
+    #[test]
+    fn test_find_exact_match_first() {
+        let data = create_test_data();
+        
+        // Search for "prog" should return "prog" as exact match first (distance 0)
+        let results = data.find("prog");
+        
+        assert!(!results.is_empty(), "Should find results");
+        assert_eq!(results[0].repo, "prog", "Exact match 'prog' should be first (Levenshtein distance 0)");
+    }
+
+    #[test]
+    fn test_find_sorted_by_levenshtein_distance() {
+        let data = create_test_data();
+        
+        // Search for "prog"
+        // - "prog" has distance 0 (exact match)
+        // - "prog-cli" has distance 4 (4 insertions: '-', 'c', 'l', 'i')
+        // - "my-prog-tools" has distance 9 (prefix 'my-' and suffix '-tools')
+        let results = data.find("prog");
+        
+        // First result should be exact match
+        assert_eq!(results[0].repo, "prog", "Exact match should be first");
+        
+        // Verify results are sorted by Levenshtein distance
+        let repo_names: Vec<&str> = results.iter().map(|r| r.repo.as_str()).collect();
+        
+        // "prog" (dist 0) should come before "prog-cli" (dist 4)
+        let prog_pos = repo_names.iter().position(|&r| r == "prog").unwrap();
+        let prog_cli_pos = repo_names.iter().position(|&r| r == "prog-cli").unwrap();
+        assert!(prog_pos < prog_cli_pos, "prog should come before prog-cli");
+        
+        // "prog-cli" (dist 4) should come before "my-prog-tools" (dist 9)
+        let my_prog_tools_pos = repo_names.iter().position(|&r| r == "my-prog-tools").unwrap();
+        assert!(prog_cli_pos < my_prog_tools_pos, "prog-cli should come before my-prog-tools");
+    }
+
+    #[test]
+    fn test_find_alphabetical_within_same_distance() {
+        let mut data = Data::new();
+        // Add repos that will match the keyword "prog" and have same Levenshtein distance
+        data.record_item(
+            "/base",
+            "https://github.com/user/progs.git",
+            "github.com",
+            "progs",   // distance 1 from "prog" (1 insertion)
+            "user",
+            "/base/github.com/user/progs",
+        );
+        data.record_item(
+            "/base",
+            "https://github.com/user/progx.git",
+            "github.com",
+            "progx",   // distance 1 from "prog" (1 insertion)
+            "user",
+            "/base/github.com/user/progx",
+        );
+        data.record_item(
+            "/base",
+            "https://github.com/user/prog.git",
+            "github.com",
+            "prog",   // distance 0 from "prog"
+            "user",
+            "/base/github.com/user/prog",
+        );
+        
+        let results = data.find("prog");
+        
+        // "prog" should be first (distance 0)
+        assert_eq!(results[0].repo, "prog", "Exact match should be first");
+        
+        // "progs" and "progx" both have distance 1, should be alphabetically sorted
+        // So "progs" should come before "progx"
+        let repo_names: Vec<&str> = results.iter().skip(1).map(|r| r.repo.as_str()).collect();
+        assert_eq!(repo_names, vec!["progs", "progx"], "Same distance repos should be alphabetically sorted");
+    }
+
+    #[test]
+    fn test_find_order_is_deterministic() {
+        let data = create_test_data();
+        
+        // Run find multiple times and verify the order is always the same
+        let results1 = data.find("prog");
+        let results2 = data.find("prog");
+        let results3 = data.find("prog");
+        
+        let order1: Vec<&str> = results1.iter().map(|r| r.repo.as_str()).collect();
+        let order2: Vec<&str> = results2.iter().map(|r| r.repo.as_str()).collect();
+        let order3: Vec<&str> = results3.iter().map(|r| r.repo.as_str()).collect();
+        
+        assert_eq!(order1, order2, "Find results should be deterministic");
+        assert_eq!(order2, order3, "Find results should be deterministic");
     }
 }
