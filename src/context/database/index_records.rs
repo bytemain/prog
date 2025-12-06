@@ -91,6 +91,14 @@ impl IndexedRecords {
         self.records.len()
     }
 
+    /// Returns an iterator over all records in sorted order by path.
+    ///
+    /// This is more efficient than `get_all_sorted()` when you only need to iterate
+    /// once and don't need to store the results, as it avoids cloning all records.
+    pub(crate) fn iter(&self) -> impl Iterator<Item = &Repo> {
+        self.records.values()
+    }
+
     /// Returns records with paths starting with the given prefix using efficient B-tree range query.
     ///
     /// This operation is O(log n + k) where n is the total number of records and k is the number
