@@ -68,10 +68,11 @@ impl Data {
     pub fn find(&self, keyword: &str) -> Vec<Repo> {
         let keyword = keyword.to_lowercase();
 
-        // Get all matching records
+        // Use iterator to filter records first, then clone only matching records.
+        // This is more memory-efficient than get_all_sorted() which clones all records upfront.
+        // We still need to clone matching records for the sort operation below.
         let mut results: Vec<Repo> = self
             .records
-            .get_all_sorted()
             .iter()
             .filter(|r| {
                 r.full_path.to_lowercase().contains(&keyword)
@@ -256,35 +257,38 @@ mod tests {
     #[test]
     fn test_find_exact_match_first() {
         let data = create_test_data();
-        
+
         // Search for "prog" should return "prog" as exact match first (distance 0)
         let results = data.find("prog");
-        
+
         assert!(!results.is_empty(), "Should find results");
-        assert_eq!(results[0].repo, "prog", "Exact match 'prog' should be first (Levenshtein distance 0)");
+        assert_eq!(
+            results[0].repo, "prog",
+            "Exact match 'prog' should be first (Levenshtein distance 0)"
+        );
     }
 
     #[test]
     fn test_find_sorted_by_levenshtein_distance() {
         let data = create_test_data();
-        
+
         // Search for "prog"
         // - "prog" has distance 0 (exact match)
         // - "prog-cli" has distance 4 (4 insertions: '-', 'c', 'l', 'i')
         // - "my-prog-tools" has distance 9 (prefix 'my-' and suffix '-tools')
         let results = data.find("prog");
-        
+
         // First result should be exact match
         assert_eq!(results[0].repo, "prog", "Exact match should be first");
-        
+
         // Verify results are sorted by Levenshtein distance
         let repo_names: Vec<&str> = results.iter().map(|r| r.repo.as_str()).collect();
-        
+
         // "prog" (dist 0) should come before "prog-cli" (dist 4)
         let prog_pos = repo_names.iter().position(|&r| r == "prog").unwrap();
         let prog_cli_pos = repo_names.iter().position(|&r| r == "prog-cli").unwrap();
         assert!(prog_pos < prog_cli_pos, "prog should come before prog-cli");
-        
+
         // "prog-cli" (dist 4) should come before "my-prog-tools" (dist 9)
         let my_prog_tools_pos = repo_names.iter().position(|&r| r == "my-prog-tools").unwrap();
         assert!(prog_cli_pos < my_prog_tools_pos, "prog-cli should come before my-prog-tools");
@@ -298,7 +302,7 @@ mod tests {
             "/base",
             "https://github.com/user/progs.git",
             "github.com",
-            "progs",   // distance 1 from "prog" (1 insertion)
+            "progs", // distance 1 from "prog" (1 insertion)
             "user",
             "/base/github.com/user/progs",
         );
@@ -306,7 +310,7 @@ mod tests {
             "/base",
             "https://github.com/user/progx.git",
             "github.com",
-            "progx",   // distance 1 from "prog" (1 insertion)
+            "progx", // distance 1 from "prog" (1 insertion)
             "user",
             "/base/github.com/user/progx",
         );
@@ -314,35 +318,39 @@ mod tests {
             "/base",
             "https://github.com/user/prog.git",
             "github.com",
-            "prog",   // distance 0 from "prog"
+            "prog", // distance 0 from "prog"
             "user",
             "/base/github.com/user/prog",
         );
-        
+
         let results = data.find("prog");
-        
+
         // "prog" should be first (distance 0)
         assert_eq!(results[0].repo, "prog", "Exact match should be first");
-        
+
         // "progs" and "progx" both have distance 1, should be alphabetically sorted
         // So "progs" should come before "progx"
         let repo_names: Vec<&str> = results.iter().skip(1).map(|r| r.repo.as_str()).collect();
-        assert_eq!(repo_names, vec!["progs", "progx"], "Same distance repos should be alphabetically sorted");
+        assert_eq!(
+            repo_names,
+            vec!["progs", "progx"],
+            "Same distance repos should be alphabetically sorted"
+        );
     }
 
     #[test]
     fn test_find_order_is_deterministic() {
         let data = create_test_data();
-        
+
         // Run find multiple times and verify the order is always the same
         let results1 = data.find("prog");
         let results2 = data.find("prog");
         let results3 = data.find("prog");
-        
+
         let order1: Vec<&str> = results1.iter().map(|r| r.repo.as_str()).collect();
         let order2: Vec<&str> = results2.iter().map(|r| r.repo.as_str()).collect();
         let order3: Vec<&str> = results3.iter().map(|r| r.repo.as_str()).collect();
-        
+
         assert_eq!(order1, order2, "Find results should be deterministic");
         assert_eq!(order2, order3, "Find results should be deterministic");
     }

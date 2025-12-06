@@ -1,5 +1,5 @@
 use crate::helpers::{
-    path::{expand_tilde, PROGRAM},
+    path::{PROGRAM, expand_tilde},
     rand::get_random_string,
 };
 use log::info;

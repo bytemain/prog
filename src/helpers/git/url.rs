@@ -61,7 +61,9 @@ pub fn parse_git_url(input: &str) -> Option<ParsedGitUrl> {
 
     // Fallback: try to parse https-like without scheme (host/owner/name)
     let mut parts = s.split('/');
-    let host = parts.next().and_then(|h| if h.contains(':') || h.contains('@') { None } else { Some(h.to_string()) });
+    let host = parts
+        .next()
+        .and_then(|h| if h.contains(':') || h.contains('@') { None } else { Some(h.to_string()) });
     let owner = parts.next().map(|o| o.to_string());
     if let Some(n) = parts.next() {
         return Some(build(host, owner, strip_git_suffix(n)));
