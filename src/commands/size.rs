@@ -161,11 +161,7 @@ pub fn run(c: &mut Context) {
             let total_size = calculate_dir_size(repo_path);
             let large_dirs = find_large_dirs(repo_path);
 
-            Some(RepoSizeInfo {
-                repo: repo.clone(),
-                total_size,
-                large_dirs,
-            })
+            Some(RepoSizeInfo { repo: repo.clone(), total_size, large_dirs })
         })
         .collect();
 

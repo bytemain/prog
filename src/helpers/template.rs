@@ -23,7 +23,7 @@ pub fn render_template(text: String, values: &HashMap<String, String>) -> String
             while let Some(c) = iter.next() {
                 if c == '}' && iter.peek() == Some(&'}') {
                     iter.next(); // Skip the second '}'
-                                 // 如果键存在于哈希表中，则替换占位符
+                    // 如果键存在于哈希表中，则替换占位符
                     if let Some(value) = values.get(&key) {
                         result.push_str(value);
                     } else {

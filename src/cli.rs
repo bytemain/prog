@@ -133,7 +133,7 @@ impl Cli {
         generate(shell, &mut cmd, bin_name, &mut buffer);
         generate(shell, &mut cmd, command, &mut buffer);
         buffer.write_all(text.as_bytes()).expect("Could not write to buffer");
-        
+
         // For PowerShell, add semicolons after key top-level statements to ensure the script works
         // when used with Invoke-Expression "$(prog shell powershell)"
         // This handles the case where PowerShell's $() joins lines with spaces in string context
@@ -144,17 +144,15 @@ impl Cli {
                 .lines()
                 .map(|line| {
                     let trimmed = line.trim();
-                    
+
                     // Track brace depth to identify top-level vs nested statements
                     in_block += trimmed.matches('{').count() as i32;
                     in_block -= trimmed.matches('}').count() as i32;
-                    
+
                     // Add semicolon to top-level statements that need it
                     // Only when we're at depth 0 after processing the line
-                    if in_block == 0 && (
-                        trimmed.starts_with("using namespace ") ||
-                        trimmed == "}"
-                    ) {
+                    if in_block == 0 && (trimmed.starts_with("using namespace ") || trimmed == "}")
+                    {
                         format!("{};", line)
                     } else {
                         line.to_string()
