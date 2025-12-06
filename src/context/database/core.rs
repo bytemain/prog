@@ -68,8 +68,9 @@ impl Data {
     pub fn find(&self, keyword: &str) -> Vec<Repo> {
         let keyword = keyword.to_lowercase();
 
-        // Use iterator to filter matching records without cloning all records first
-        // This is more memory-efficient than get_all_sorted() for large datasets
+        // Use iterator to filter records first, then clone only matching records.
+        // This is more memory-efficient than get_all_sorted() which clones all records upfront.
+        // We still need to clone matching records for the sort operation below.
         let mut results: Vec<Repo> = self
             .records
             .iter()
