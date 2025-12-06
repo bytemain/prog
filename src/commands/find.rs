@@ -3,7 +3,7 @@ use crate::{
     helpers::{git, path, platform},
 };
 use inquire::Select;
-use linked_hash_map::LinkedHashMap;
+use std::collections::HashSet;
 
 use super::printer::error::handle_inquire_error;
 
@@ -43,33 +43,36 @@ pub fn find_keyword(c: &Context, keyword: &str) -> Option<Vec<FoundItem>> {
         return None;
     }
 
-    // Use LinkedHashMap to preserve the order from database query (sorted by relevance)
-    let mut options = LinkedHashMap::<String, FoundItem>::new();
+    // Use Vec with HashSet for deduplication while preserving insertion order
+    let mut options: Vec<FoundItem> = Vec::new();
+    let mut seen: HashSet<String> = HashSet::new();
 
     let mut should_sync = false;
     for repo in result {
         let path_str: String = repo.full_path.clone();
         if path::exists(&path_str) {
             // Repo path entry with branch
-            options.entry(path_str.clone()).or_insert_with(|| FoundItem {
-                file_path: path_str.clone(),
-                branch: git::get_branch(&path_str),
-            });
+            if seen.insert(path_str.clone()) {
+                options.push(FoundItem {
+                    file_path: path_str.clone(),
+                    branch: git::get_branch(&path_str),
+                });
+            }
 
             // Host directory entry (no branch)
             if repo.host == keyword {
                 let host_path = repo.host_fs_path();
-                options
-                    .entry(host_path.clone())
-                    .or_insert_with(|| FoundItem { file_path: host_path, branch: String::new() });
+                if seen.insert(host_path.clone()) {
+                    options.push(FoundItem { file_path: host_path, branch: String::new() });
+                }
             }
 
             // Owner directory entry (no branch)
             if repo.owner == keyword {
                 let owner_path = repo.owner_fs_path();
-                options
-                    .entry(owner_path.clone())
-                    .or_insert_with(|| FoundItem { file_path: owner_path, branch: String::new() });
+                if seen.insert(owner_path.clone()) {
+                    options.push(FoundItem { file_path: owner_path, branch: String::new() });
+                }
             }
         } else {
             should_sync = true;
@@ -80,7 +83,7 @@ pub fn find_keyword(c: &Context, keyword: &str) -> Option<Vec<FoundItem>> {
         c.sync_silent();
     }
 
-    Some(options.into_iter().map(|(_, v)| v).collect())
+    Some(options)
 }
 
 pub fn run(c: &Context, keyword: &str, _query: bool) {
