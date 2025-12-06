@@ -2,7 +2,7 @@ use super::models::*;
 use serde::{de::Deserializer, ser::Serializer, Deserialize, Serialize};
 use std::collections::BTreeMap;
 
-/// A collection of repository records with O(log n) lookup by path using B+ tree structure.
+/// A collection of repository records with O(log n) lookup by path using B-tree structure.
 /// Uses BTreeMap for efficient ordered lookups, range queries, and sorted iteration.
 #[derive(Debug, Clone)]
 pub(crate) struct IndexedRecords {
@@ -91,7 +91,7 @@ impl IndexedRecords {
         self.records.len()
     }
 
-    /// Returns records with paths starting with the given prefix using efficient B+ tree range query.
+    /// Returns records with paths starting with the given prefix using efficient B-tree range query.
     ///
     /// This operation is O(log n + k) where n is the total number of records and k is the number
     /// of matching records, making it significantly faster than a linear scan for prefix searches.
@@ -105,9 +105,12 @@ impl IndexedRecords {
     /// * Vector of repository records whose paths start with the given prefix
     pub(crate) fn get_by_prefix(&self, prefix: &str) -> Vec<&Repo> {
         // Use range query to efficiently find all paths starting with the prefix
-        // The end bound uses the prefix with a high character appended to capture all matches
-        let end = format!("{}~", prefix); // '~' is a high ASCII character
-        self.records.range(prefix.to_string()..end).map(|(_, v)| v).collect()
+        // Filter by starts_with to handle edge cases with special characters
+        self.records
+            .range(prefix.to_string()..)
+            .take_while(|(k, _)| k.starts_with(prefix))
+            .map(|(_, v)| v)
+            .collect()
     }
 }
 
