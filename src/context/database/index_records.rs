@@ -188,7 +188,7 @@ mod tests {
         records.add(create_test_repo("/base/github.com/other/prog", "prog"));
         records.add(create_test_repo("/base/gitlab.com/user/prog", "prog"));
         
-        // Query by prefix - should use efficient B+ tree range query
+        // Query by prefix - should use efficient B-tree range query
         let results = records.get_by_prefix("/base/github.com/user/prog");
         let paths: Vec<&str> = results.iter().map(|r| r.full_path.as_str()).collect();
         
@@ -212,7 +212,7 @@ mod tests {
     fn test_btree_lookup_performance() {
         let mut records = IndexedRecords::new();
         
-        // Add many records to test B+ tree efficiency
+        // Add many records to test B-tree efficiency
         for i in 0..100 {
             let path = format!("/base/github.com/user/repo{:03}", i);
             let name = format!("repo{:03}", i);
