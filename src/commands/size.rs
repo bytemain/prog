@@ -6,6 +6,15 @@ use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
 
+// Size constants
+const KB: u64 = 1024;
+const MB: u64 = 1024 * KB;
+const GB: u64 = 1024 * MB;
+
+// Threshold constants for color coding
+const MB_100: u64 = 100 * MB;
+const MB_500: u64 = 500 * MB;
+
 /// Calculate the size of a directory recursively
 fn calculate_dir_size(path: &Path) -> u64 {
     if !path.exists() {
@@ -15,15 +24,17 @@ fn calculate_dir_size(path: &Path) -> u64 {
     let mut total_size = 0u64;
     if let Ok(entries) = fs::read_dir(path) {
         for entry in entries.flatten() {
-            let entry_path = entry.path();
-            if entry_path.is_symlink() {
-                // Skip symlinks to avoid infinite loops
-                continue;
-            }
-            if entry_path.is_dir() {
-                total_size += calculate_dir_size(&entry_path);
-            } else if let Ok(metadata) = entry.metadata() {
-                total_size += metadata.len();
+            // Check if the entry is a symlink using file_type() before following it
+            if let Ok(file_type) = entry.file_type() {
+                if file_type.is_symlink() {
+                    // Skip symlinks to avoid infinite loops
+                    continue;
+                }
+                if file_type.is_dir() {
+                    total_size += calculate_dir_size(&entry.path());
+                } else if let Ok(metadata) = entry.metadata() {
+                    total_size += metadata.len();
+                }
             }
         }
     }
@@ -32,10 +43,6 @@ fn calculate_dir_size(path: &Path) -> u64 {
 
 /// Format bytes into a human-readable string (e.g., "1.5 GB", "256 MB")
 fn format_size(bytes: u64) -> String {
-    const KB: u64 = 1024;
-    const MB: u64 = 1024 * KB;
-    const GB: u64 = 1024 * MB;
-
     if bytes >= GB {
         format!("{:.2} GB", bytes as f64 / GB as f64)
     } else if bytes >= MB {
@@ -50,8 +57,6 @@ fn format_size(bytes: u64) -> String {
 /// Format size with color based on size thresholds
 fn format_size_colored(bytes: u64) -> String {
     let size_str = format_size(bytes);
-    const GB: u64 = 1024 * 1024 * 1024;
-    const MB_500: u64 = 500 * 1024 * 1024;
 
     if bytes >= GB {
         // > 1 GB - show in red
@@ -67,8 +72,6 @@ fn format_size_colored(bytes: u64) -> String {
 /// Format size with color for subdirectories (different thresholds)
 fn format_subdir_size_colored(bytes: u64) -> String {
     let size_str = format_size(bytes);
-    const GB: u64 = 1024 * 1024 * 1024;
-    const MB_100: u64 = 100 * 1024 * 1024;
 
     if bytes >= GB {
         format!("{}", size_str.red())
@@ -232,7 +235,9 @@ pub fn run(c: &mut Context) {
     // Print tips about external tools
     println!();
     println!("{}", "Recommended tools for disk space management:".green());
-    println!("  {} - Interactive disk usage analyzer", "dust / ncdu / dua".blue());
+    println!("  {} - Interactive disk usage analyzer", "dust".blue());
+    println!("  {} - Interactive disk usage analyzer", "ncdu".blue());
+    println!("  {} - Interactive disk usage analyzer", "dua".blue());
     println!("  {} - Clean node_modules directories", "npkill".blue());
     println!("  {} - Clean Rust target directories", "cargo-sweep".blue());
     println!("  {} - Analyze Git repository size", "git-sizer".blue());
