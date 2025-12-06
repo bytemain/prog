@@ -68,10 +68,10 @@ mod tests {
         let temp_dir = tempfile::tempdir().unwrap();
         let gitdir = temp_dir.path().join(".git");
         fs::create_dir_all(&gitdir).unwrap();
-        
+
         let head_path = gitdir.join("HEAD");
         fs::write(head_path, head_content).unwrap();
-        
+
         temp_dir
     }
 
@@ -79,7 +79,7 @@ mod tests {
     fn test_read_branch_simple_branch() {
         let temp_dir = create_test_gitdir_with_head("ref: refs/heads/main\n");
         let gitdir = temp_dir.path().join(".git");
-        
+
         let branch = read_branch_from_gitdir(&gitdir);
         assert_eq!(branch, Some("main".to_string()));
     }
@@ -88,7 +88,7 @@ mod tests {
     fn test_read_branch_with_slash() {
         let temp_dir = create_test_gitdir_with_head("ref: refs/heads/release/1.100\n");
         let gitdir = temp_dir.path().join(".git");
-        
+
         let branch = read_branch_from_gitdir(&gitdir);
         assert_eq!(branch, Some("release/1.100".to_string()));
     }
@@ -97,7 +97,7 @@ mod tests {
     fn test_read_branch_feature_branch() {
         let temp_dir = create_test_gitdir_with_head("ref: refs/heads/feature/user-auth\n");
         let gitdir = temp_dir.path().join(".git");
-        
+
         let branch = read_branch_from_gitdir(&gitdir);
         assert_eq!(branch, Some("feature/user-auth".to_string()));
     }
@@ -106,7 +106,7 @@ mod tests {
     fn test_read_branch_remote_branch() {
         let temp_dir = create_test_gitdir_with_head("ref: refs/remotes/origin/main\n");
         let gitdir = temp_dir.path().join(".git");
-        
+
         let branch = read_branch_from_gitdir(&gitdir);
         assert_eq!(branch, Some("origin/main".to_string()));
     }
@@ -115,7 +115,7 @@ mod tests {
     fn test_read_branch_detached_head() {
         let temp_dir = create_test_gitdir_with_head("1234567890abcdef1234567890abcdef12345678\n");
         let gitdir = temp_dir.path().join(".git");
-        
+
         let branch = read_branch_from_gitdir(&gitdir);
         assert_eq!(branch, Some("detached-1234567".to_string()));
     }
@@ -124,7 +124,7 @@ mod tests {
     fn test_read_branch_tag() {
         let temp_dir = create_test_gitdir_with_head("ref: refs/tags/v1.0.0\n");
         let gitdir = temp_dir.path().join(".git");
-        
+
         let branch = read_branch_from_gitdir(&gitdir);
         assert_eq!(branch, Some("tags/v1.0.0".to_string()));
     }
@@ -133,7 +133,7 @@ mod tests {
     fn test_read_branch_unknown_ref_format() {
         let temp_dir = create_test_gitdir_with_head("ref: refs/custom/something\n");
         let gitdir = temp_dir.path().join(".git");
-        
+
         let branch = read_branch_from_gitdir(&gitdir);
         assert_eq!(branch, Some("refs/custom/something".to_string()));
     }

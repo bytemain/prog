@@ -1,5 +1,5 @@
 use super::models::*;
-use serde::{de::Deserializer, ser::Serializer, Deserialize, Serialize};
+use serde::{Deserialize, Serialize, de::Deserializer, ser::Serializer};
 use std::collections::BTreeMap;
 
 /// A collection of repository records with O(log n) lookup by path using B-tree structure.
@@ -168,50 +168,56 @@ mod tests {
     #[test]
     fn test_btree_sorted_iteration() {
         let mut records = IndexedRecords::new();
-        
+
         // Add records in non-sorted order
         records.add(create_test_repo("/base/github.com/user/zebra", "zebra"));
         records.add(create_test_repo("/base/github.com/user/apple", "apple"));
         records.add(create_test_repo("/base/github.com/user/mango", "mango"));
-        
+
         // BTreeMap should maintain sorted order
         let sorted = records.get_all_sorted();
         let paths: Vec<&str> = sorted.iter().map(|r| r.full_path.as_str()).collect();
-        
-        assert_eq!(paths, vec![
-            "/base/github.com/user/apple",
-            "/base/github.com/user/mango",
-            "/base/github.com/user/zebra",
-        ]);
+
+        assert_eq!(
+            paths,
+            vec![
+                "/base/github.com/user/apple",
+                "/base/github.com/user/mango",
+                "/base/github.com/user/zebra",
+            ]
+        );
     }
 
     #[test]
     fn test_btree_prefix_query() {
         let mut records = IndexedRecords::new();
-        
+
         // Add records with different prefixes
         records.add(create_test_repo("/base/github.com/user/prog", "prog"));
         records.add(create_test_repo("/base/github.com/user/prog-cli", "prog-cli"));
         records.add(create_test_repo("/base/github.com/user/prog-tools", "prog-tools"));
         records.add(create_test_repo("/base/github.com/other/prog", "prog"));
         records.add(create_test_repo("/base/gitlab.com/user/prog", "prog"));
-        
+
         // Query by prefix - should use efficient B-tree range query
         let results = records.get_by_prefix("/base/github.com/user/prog");
         let paths: Vec<&str> = results.iter().map(|r| r.full_path.as_str()).collect();
-        
-        assert_eq!(paths, vec![
-            "/base/github.com/user/prog",
-            "/base/github.com/user/prog-cli",
-            "/base/github.com/user/prog-tools",
-        ]);
+
+        assert_eq!(
+            paths,
+            vec![
+                "/base/github.com/user/prog",
+                "/base/github.com/user/prog-cli",
+                "/base/github.com/user/prog-tools",
+            ]
+        );
     }
 
     #[test]
     fn test_btree_prefix_query_no_matches() {
         let mut records = IndexedRecords::new();
         records.add(create_test_repo("/base/github.com/user/vscode", "vscode"));
-        
+
         let results = records.get_by_prefix("/base/gitlab.com");
         assert!(results.is_empty());
     }
@@ -219,14 +225,14 @@ mod tests {
     #[test]
     fn test_btree_lookup_performance() {
         let mut records = IndexedRecords::new();
-        
+
         // Add many records to test B-tree efficiency
         for i in 0..100 {
             let path = format!("/base/github.com/user/repo{:03}", i);
             let name = format!("repo{:03}", i);
             records.add(create_test_repo(&path, &name));
         }
-        
+
         // Direct lookup should be O(log n)
         assert!(records.get("/base/github.com/user/repo050").is_some());
         assert!(records.get("/base/github.com/user/repo099").is_some());
@@ -242,24 +248,24 @@ mod tests {
         struct Wrapper {
             records: IndexedRecords,
         }
-        
+
         let mut records = IndexedRecords::new();
         records.add(create_test_repo("/base/github.com/user/zebra", "zebra"));
         records.add(create_test_repo("/base/github.com/user/apple", "apple"));
-        
+
         let wrapper = Wrapper { records };
-        
+
         // Serialize
         let serialized = toml::to_string(&wrapper).unwrap();
-        
+
         // Deserialize
         let deserialized: Wrapper = toml::from_str(&serialized).unwrap();
-        
+
         // Verify the data is preserved and sorted
         assert_eq!(deserialized.records.size(), 2);
         assert!(deserialized.records.get("/base/github.com/user/zebra").is_some());
         assert!(deserialized.records.get("/base/github.com/user/apple").is_some());
-        
+
         // Verify sorting is maintained after deserialization
         let sorted = deserialized.records.get_all_sorted();
         assert_eq!(sorted[0].full_path, "/base/github.com/user/apple");
