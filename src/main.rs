@@ -23,6 +23,7 @@ fn main() {
         Some(ECommands::Remove { path, yes }) => commands::remove::run(&mut context, path, yes),
         Some(ECommands::Clean { yes }) => commands::clean::run(&context, yes),
         Some(ECommands::List) => commands::list::run(&mut context),
+        Some(ECommands::Size) => commands::size::run(&mut context),
         Some(ECommands::Tmp(tmp)) => {
             let tmp_cmd = tmp.command;
             if tmp_cmd.is_none() {

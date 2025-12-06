@@ -43,6 +43,8 @@ pub enum ECommands {
     },
     #[command(about = "List all repositories")]
     List,
+    #[command(about = "Show disk usage for all repositories")]
+    Size,
     Tmp(commands::tmp::TmpArgs),
 }
 
