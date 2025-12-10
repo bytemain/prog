@@ -135,7 +135,8 @@ impl IndexedRecords {
         self.records.values().cloned().collect()
     }
 
-    /// Creates an IndexedRecords instance from a vector of repository records
+    /// Creates an IndexedRecords instance from a vector of repository records.
+    /// This method rebuilds all secondary indexes from scratch.
     ///
     /// # Arguments
     ///
@@ -144,6 +145,7 @@ impl IndexedRecords {
     /// # Returns
     ///
     /// * An IndexedRecords instance containing all the provided records
+    #[allow(dead_code)]
     fn from_vec(records: Vec<Repo>) -> Self {
         let mut indexed = Self::new();
         for record in records {
@@ -282,38 +284,65 @@ impl IndexedRecords {
     }
 }
 
-/// Custom serialization implementation that serializes as a vector to maintain order.
+/// Helper struct for serialization that includes both records and indexes.
+/// This allows persisting indexes to disk to avoid rebuilding them on every load.
+#[derive(Serialize, Deserialize)]
+struct SerializedIndexedRecords {
+    /// The primary records as a vector
+    records: Vec<Repo>,
+    /// Secondary index: host -> set of paths
+    host_index: BTreeMap<String, BTreeSet<String>>,
+    /// Secondary index: owner -> set of paths
+    owner_index: BTreeMap<String, BTreeSet<String>>,
+    /// Secondary index: repo name -> set of paths
+    repo_index: BTreeMap<String, BTreeSet<String>>,
+}
+
+/// Custom serialization implementation that persists both records and indexes.
 ///
-/// Only the primary records are serialized; secondary indexes are not serialized
-/// because they can be efficiently rebuilt during deserialization. This approach:
-/// - Reduces storage size by not duplicating index data
-/// - Ensures indexes are always consistent with the primary data
-/// - Follows the standard database pattern where indexes are derived from primary data
+/// This approach trades storage space for faster load times by persisting
+/// the secondary indexes along with the primary records, eliminating the
+/// need to rebuild indexes on every deserialization.
 impl Serialize for IndexedRecords {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
     {
-        // Convert to vector maintaining order and serialize
-        let ordered_records: Vec<Repo> = self.to_vec();
-        ordered_records.serialize(serializer)
+        // Serialize both records and indexes for fast loading
+        let serialized = SerializedIndexedRecords {
+            records: self.to_vec(),
+            host_index: self.host_index.clone(),
+            owner_index: self.owner_index.clone(),
+            repo_index: self.repo_index.clone(),
+        };
+        serialized.serialize(serializer)
     }
 }
 
-/// Custom deserialization implementation that rebuilds the BTreeMap and all secondary indexes.
+/// Custom deserialization implementation that restores both records and indexes.
 ///
-/// Secondary indexes are automatically rebuilt during deserialization by iterating
-/// through the records and adding each to the appropriate indexes. This ensures
-/// indexes are always in sync with the primary data.
+/// Indexes are loaded directly from disk rather than being rebuilt,
+/// providing faster load times at the cost of slightly larger storage.
 impl<'de> Deserialize<'de> for IndexedRecords {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: Deserializer<'de>,
     {
-        // Deserialize as a vector of Repo objects
-        let records = Vec::<Repo>::deserialize(deserializer)?;
-        // Build the IndexedRecords from the vector, which also rebuilds all secondary indexes
-        Ok(IndexedRecords::from_vec(records))
+        // Deserialize the complete structure including indexes
+        let serialized = SerializedIndexedRecords::deserialize(deserializer)?;
+
+        // Build the primary records map
+        let mut records = BTreeMap::new();
+        for record in serialized.records {
+            records.insert(record.full_path.clone(), record);
+        }
+
+        Ok(IndexedRecords {
+            records,
+            host_index: serialized.host_index,
+            owner_index: serialized.owner_index,
+            repo_index: serialized.repo_index,
+        })
     }
 }
 
