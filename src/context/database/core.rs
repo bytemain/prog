@@ -210,6 +210,78 @@ impl Database {
     pub fn get_by_path(&self, path: &str) -> Option<Repo> {
         self.data.records.get(path).cloned()
     }
+
+    /// Get all repositories hosted on a specific host (e.g., github.com, gitlab.com)
+    ///
+    /// Uses secondary index for O(log n) lookup time.
+    ///
+    /// # Arguments
+    ///
+    /// * `host` - The host name to search for
+    ///
+    /// # Returns
+    ///
+    /// * Vector of repository records hosted on the specified host
+    pub fn get_by_host(&self, host: &str) -> Vec<Repo> {
+        self.data.records.get_by_host(host).into_iter().cloned().collect()
+    }
+
+    /// Get all repositories owned by a specific owner
+    ///
+    /// Uses secondary index for O(log n) lookup time.
+    ///
+    /// # Arguments
+    ///
+    /// * `owner` - The owner name to search for
+    ///
+    /// # Returns
+    ///
+    /// * Vector of repository records owned by the specified owner
+    pub fn get_by_owner(&self, owner: &str) -> Vec<Repo> {
+        self.data.records.get_by_owner(owner).into_iter().cloned().collect()
+    }
+
+    /// Get all repositories with a specific repo name
+    ///
+    /// Uses secondary index for O(log n) lookup time.
+    ///
+    /// # Arguments
+    ///
+    /// * `repo` - The repository name to search for
+    ///
+    /// # Returns
+    ///
+    /// * Vector of repository records with the specified repo name
+    pub fn get_by_repo(&self, repo: &str) -> Vec<Repo> {
+        self.data.records.get_by_repo(repo).into_iter().cloned().collect()
+    }
+
+    /// Get all unique host names in the database
+    ///
+    /// # Returns
+    ///
+    /// * Vector of unique host names, sorted alphabetically
+    pub fn get_all_hosts(&self) -> Vec<String> {
+        self.data.records.get_all_hosts().into_iter().map(|s| s.to_string()).collect()
+    }
+
+    /// Get all unique owner names in the database
+    ///
+    /// # Returns
+    ///
+    /// * Vector of unique owner names, sorted alphabetically
+    pub fn get_all_owners(&self) -> Vec<String> {
+        self.data.records.get_all_owners().into_iter().map(|s| s.to_string()).collect()
+    }
+
+    /// Get all unique repository names in the database
+    ///
+    /// # Returns
+    ///
+    /// * Vector of unique repository names, sorted alphabetically
+    pub fn get_all_repo_names(&self) -> Vec<String> {
+        self.data.records.get_all_repos().into_iter().map(|s| s.to_string()).collect()
+    }
 }
 
 #[cfg(test)]
@@ -353,5 +425,105 @@ mod tests {
 
         assert_eq!(order1, order2, "Find results should be deterministic");
         assert_eq!(order2, order3, "Find results should be deterministic");
+    }
+
+    fn create_test_data_with_multiple_hosts() -> Data {
+        let mut data = Data::new();
+        data.record_item(
+            "/base",
+            "https://github.com/microsoft/vscode.git",
+            "github.com",
+            "vscode",
+            "microsoft",
+            "/base/github.com/microsoft/vscode",
+        );
+        data.record_item(
+            "/base",
+            "https://github.com/bytemain/prog.git",
+            "github.com",
+            "prog",
+            "bytemain",
+            "/base/github.com/bytemain/prog",
+        );
+        data.record_item(
+            "/base",
+            "https://gitlab.com/user/project.git",
+            "gitlab.com",
+            "project",
+            "user",
+            "/base/gitlab.com/user/project",
+        );
+        data
+    }
+
+    #[test]
+    fn test_data_get_by_host() {
+        let data = create_test_data_with_multiple_hosts();
+
+        // Get repos from GitHub
+        let github_repos = data.records.get_by_host("github.com");
+        assert_eq!(github_repos.len(), 2);
+        assert!(github_repos.iter().all(|r| r.host == "github.com"));
+
+        // Get repos from GitLab
+        let gitlab_repos = data.records.get_by_host("gitlab.com");
+        assert_eq!(gitlab_repos.len(), 1);
+        assert_eq!(gitlab_repos[0].repo, "project");
+
+        // Non-existent host
+        let empty = data.records.get_by_host("bitbucket.org");
+        assert!(empty.is_empty());
+    }
+
+    #[test]
+    fn test_data_get_by_owner() {
+        let data = create_test_data_with_multiple_hosts();
+
+        // Get Microsoft's repos
+        let ms_repos = data.records.get_by_owner("microsoft");
+        assert_eq!(ms_repos.len(), 1);
+        assert_eq!(ms_repos[0].repo, "vscode");
+
+        // Get bytemain's repos
+        let bm_repos = data.records.get_by_owner("bytemain");
+        assert_eq!(bm_repos.len(), 1);
+        assert_eq!(bm_repos[0].repo, "prog");
+    }
+
+    #[test]
+    fn test_data_get_by_repo() {
+        let data = create_test_data_with_multiple_hosts();
+
+        // Get vscode repos
+        let vscode_repos = data.records.get_by_repo("vscode");
+        assert_eq!(vscode_repos.len(), 1);
+        assert_eq!(vscode_repos[0].owner, "microsoft");
+    }
+
+    #[test]
+    fn test_data_get_all_hosts() {
+        let data = create_test_data_with_multiple_hosts();
+
+        let hosts = data.records.get_all_hosts();
+        assert_eq!(hosts.len(), 2);
+        assert_eq!(hosts, vec!["github.com", "gitlab.com"]);
+    }
+
+    #[test]
+    fn test_data_get_all_owners() {
+        let data = create_test_data_with_multiple_hosts();
+
+        let owners = data.records.get_all_owners();
+        assert_eq!(owners.len(), 3);
+        assert_eq!(owners, vec!["bytemain", "microsoft", "user"]);
+    }
+
+    #[test]
+    fn test_data_get_all_repos() {
+        let data = create_test_data_with_multiple_hosts();
+
+        let repos = data.records.get_all_repos();
+        assert_eq!(repos.len(), 3);
+        assert_eq!(repos, vec!["prog", "project", "vscode"]);
     }
 }
