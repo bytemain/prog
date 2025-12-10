@@ -52,6 +52,22 @@ impl IndexedRecords {
         }
     }
 
+    /// Removes all secondary index entries for a record at the given path
+    fn remove_from_all_indexes(&mut self, path: &str) {
+        if let Some(record) = self.records.get(path) {
+            Self::remove_from_index(&mut self.host_index, &record.host, path);
+            Self::remove_from_index(&mut self.owner_index, &record.owner, path);
+            Self::remove_from_index(&mut self.repo_index, &record.repo, path);
+        }
+    }
+
+    /// Adds secondary index entries for a record at the given path
+    fn add_to_all_indexes(&mut self, record: &Repo, path: &str) {
+        Self::add_to_index(&mut self.host_index, &record.host, path);
+        Self::add_to_index(&mut self.owner_index, &record.owner, path);
+        Self::add_to_index(&mut self.repo_index, &record.repo, path);
+    }
+
     /// Adds a new repository record to the collection
     ///
     /// The record is added to the BTreeMap with its path as the key,
@@ -65,32 +81,20 @@ impl IndexedRecords {
         let path = record.full_path.clone();
 
         // Remove old index entries if this path already exists
-        if let Some(old_record) = self.records.get(&path) {
-            Self::remove_from_index(&mut self.host_index, &old_record.host, &path);
-            Self::remove_from_index(&mut self.owner_index, &old_record.owner, &path);
-            Self::remove_from_index(&mut self.repo_index, &old_record.repo, &path);
-        }
+        self.remove_from_all_indexes(&path);
 
         // Add to secondary indexes
-        Self::add_to_index(&mut self.host_index, &record.host, &path);
-        Self::add_to_index(&mut self.owner_index, &record.owner, &path);
-        Self::add_to_index(&mut self.repo_index, &record.repo, &path);
+        self.add_to_all_indexes(&record, &path);
 
         self.records.insert(path, record);
     }
 
     pub(crate) fn insert(&mut self, path: &str, record: Repo) {
         // Remove old index entries if this path already exists
-        if let Some(old_record) = self.records.get(path) {
-            Self::remove_from_index(&mut self.host_index, &old_record.host, path);
-            Self::remove_from_index(&mut self.owner_index, &old_record.owner, path);
-            Self::remove_from_index(&mut self.repo_index, &old_record.repo, path);
-        }
+        self.remove_from_all_indexes(path);
 
         // Add to secondary indexes
-        Self::add_to_index(&mut self.host_index, &record.host, path);
-        Self::add_to_index(&mut self.owner_index, &record.owner, path);
-        Self::add_to_index(&mut self.repo_index, &record.repo, path);
+        self.add_to_all_indexes(&record, path);
 
         self.records.insert(path.to_string(), record);
     }
@@ -278,7 +282,13 @@ impl IndexedRecords {
     }
 }
 
-/// Custom serialization implementation that serializes as a vector to maintain order
+/// Custom serialization implementation that serializes as a vector to maintain order.
+///
+/// Only the primary records are serialized; secondary indexes are not serialized
+/// because they can be efficiently rebuilt during deserialization. This approach:
+/// - Reduces storage size by not duplicating index data
+/// - Ensures indexes are always consistent with the primary data
+/// - Follows the standard database pattern where indexes are derived from primary data
 impl Serialize for IndexedRecords {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
@@ -290,7 +300,11 @@ impl Serialize for IndexedRecords {
     }
 }
 
-/// Custom deserialization implementation that builds a BTreeMap from the vector
+/// Custom deserialization implementation that rebuilds the BTreeMap and all secondary indexes.
+///
+/// Secondary indexes are automatically rebuilt during deserialization by iterating
+/// through the records and adding each to the appropriate indexes. This ensures
+/// indexes are always in sync with the primary data.
 impl<'de> Deserialize<'de> for IndexedRecords {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
@@ -298,7 +312,7 @@ impl<'de> Deserialize<'de> for IndexedRecords {
     {
         // Deserialize as a vector of Repo objects
         let records = Vec::<Repo>::deserialize(deserializer)?;
-        // Build the IndexedRecords from the vector
+        // Build the IndexedRecords from the vector, which also rebuilds all secondary indexes
         Ok(IndexedRecords::from_vec(records))
     }
 }
