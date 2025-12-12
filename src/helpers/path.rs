@@ -1,4 +1,5 @@
 use std::{fs, path::PathBuf};
+use std::path::Path;
 
 use dirs::home_dir;
 
@@ -10,6 +11,8 @@ pub fn join_home_dir(path: &str) -> PathBuf {
 
 pub const PROGRAM: &str = "prog";
 const FOLDER: &str = ".prog";
+/// macOS metadata file that should be ignored when checking if a directory is empty
+const DS_STORE_FILE: &str = ".DS_Store";
 
 pub const DATA_FOLDER: &str = "data";
 
@@ -33,10 +36,46 @@ pub fn exists(path: &str) -> bool {
     fs::metadata(path).is_ok()
 }
 
+/// Checks if a directory is effectively empty.
+///
+/// A directory is considered effectively empty if it contains no entries,
+/// or if it only contains `.DS_Store` files (macOS metadata files).
+///
+/// # Arguments
+///
+/// * `path` - The path to the directory to check
+///
+/// # Returns
+///
+/// * `bool` - true if the directory is effectively empty, false otherwise
+fn is_dir_effectively_empty(path: &Path) -> bool {
+    match fs::read_dir(path) {
+        Ok(entries) => {
+            for entry in entries.flatten() {
+                let file_name = entry.file_name();
+                if file_name != DS_STORE_FILE {
+                    return false;
+                }
+            }
+            true
+        }
+        Err(_) => false,
+    }
+}
+
+/// Removes .DS_Store file from a directory if it exists.
+fn remove_ds_store_if_exists(path: &Path) {
+    let ds_store_path = path.join(DS_STORE_FILE);
+    if ds_store_path.exists() {
+        let _ = fs::remove_file(ds_store_path);
+    }
+}
+
 /// Removes a directory and all its empty parent directories recursively.
 ///
 /// This function first removes the target directory using `remove_dir_all`,
 /// then checks if parent directories are empty and removes them if they are.
+/// Directories containing only `.DS_Store` files are treated as empty.
 ///
 /// # Arguments
 ///
@@ -65,14 +104,10 @@ pub fn remove_dir_with_empty_parents(
             }
         }
 
-        // Check if directory is empty
-        let is_empty = match fs::read_dir(&parent) {
-            Ok(mut entries) => entries.next().is_none(),
-            Err(_) => break, // If we can't read the directory, stop
-        };
-
-        if is_empty {
-            // Remove the empty directory
+        // Check if directory is effectively empty (empty or only contains .DS_Store)
+        if is_dir_effectively_empty(&parent) {
+            // First remove .DS_Store if it exists, then remove the empty directory
+            remove_ds_store_if_exists(&parent);
             match fs::remove_dir(&parent) {
                 Ok(_) => {
                     // Continue with the next parent
@@ -211,5 +246,109 @@ mod tests {
         // Test case 6: Nested path under home directory
         let nested_path = format!("{}/Documents/Projects/rust", home);
         assert_eq!(contract_tilde(&nested_path), "~/Documents/Projects/rust");
+    }
+
+    #[test]
+    fn test_is_dir_effectively_empty() {
+        use std::fs::{self, File};
+        use std::io::Write;
+
+        // Create a temporary directory for testing
+        let temp_dir = tempfile::tempdir().unwrap();
+        let temp_path = temp_dir.path().to_path_buf();
+
+        // Test case 1: Actually empty directory
+        let empty_dir = temp_path.join("empty");
+        fs::create_dir(&empty_dir).unwrap();
+        assert!(is_dir_effectively_empty(&empty_dir));
+
+        // Test case 2: Directory with only .DS_Store
+        let ds_store_dir = temp_path.join("ds_store_only");
+        fs::create_dir(&ds_store_dir).unwrap();
+        File::create(ds_store_dir.join(".DS_Store"))
+            .unwrap()
+            .write_all(b"test")
+            .unwrap();
+        assert!(is_dir_effectively_empty(&ds_store_dir));
+
+        // Test case 3: Directory with other files
+        let non_empty_dir = temp_path.join("non_empty");
+        fs::create_dir(&non_empty_dir).unwrap();
+        File::create(non_empty_dir.join("somefile.txt"))
+            .unwrap()
+            .write_all(b"test")
+            .unwrap();
+        assert!(!is_dir_effectively_empty(&non_empty_dir));
+
+        // Test case 4: Directory with .DS_Store and other files
+        let mixed_dir = temp_path.join("mixed");
+        fs::create_dir(&mixed_dir).unwrap();
+        File::create(mixed_dir.join(".DS_Store"))
+            .unwrap()
+            .write_all(b"test")
+            .unwrap();
+        File::create(mixed_dir.join("somefile.txt"))
+            .unwrap()
+            .write_all(b"test")
+            .unwrap();
+        assert!(!is_dir_effectively_empty(&mixed_dir));
+    }
+
+    #[test]
+    fn test_remove_dir_with_empty_parents_removes_ds_store_only_dirs() {
+        use std::fs::{self, File};
+        use std::io::Write;
+
+        // Create a temporary directory structure for testing
+        let temp_dir = tempfile::tempdir().unwrap();
+        let base_path = temp_dir.path().to_path_buf();
+
+        // Create nested structure: base/parent/child
+        // parent will contain only .DS_Store after child is removed
+        let parent_dir = base_path.join("parent");
+        let child_dir = parent_dir.join("child");
+        fs::create_dir_all(&child_dir).unwrap();
+
+        // Add .DS_Store to parent directory
+        File::create(parent_dir.join(".DS_Store"))
+            .unwrap()
+            .write_all(b"test")
+            .unwrap();
+
+        // Remove child directory with empty parents cleanup
+        remove_dir_with_empty_parents(&child_dir, Some(&base_path)).unwrap();
+
+        // Parent should be removed because it only contained .DS_Store and child
+        assert!(!parent_dir.exists());
+        // Base should still exist (stop_at)
+        assert!(base_path.exists());
+    }
+
+    #[test]
+    fn test_remove_dir_with_empty_parents_keeps_non_empty_dirs() {
+        use std::fs::{self, File};
+        use std::io::Write;
+
+        // Create a temporary directory structure for testing
+        let temp_dir = tempfile::tempdir().unwrap();
+        let base_path = temp_dir.path().to_path_buf();
+
+        // Create nested structure: base/parent/child
+        let parent_dir = base_path.join("parent");
+        let child_dir = parent_dir.join("child");
+        fs::create_dir_all(&child_dir).unwrap();
+
+        // Add a regular file to parent directory (not just .DS_Store)
+        File::create(parent_dir.join("important.txt"))
+            .unwrap()
+            .write_all(b"test")
+            .unwrap();
+
+        // Remove child directory with empty parents cleanup
+        remove_dir_with_empty_parents(&child_dir, Some(&base_path)).unwrap();
+
+        // Parent should still exist because it contains important.txt
+        assert!(parent_dir.exists());
+        assert!(parent_dir.join("important.txt").exists());
     }
 }
