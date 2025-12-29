@@ -167,6 +167,8 @@ impl Cli {
                     // Track if we're entering or leaving a param() block
                     if trimmed.starts_with("param(") || trimmed.contains(" param(") {
                         in_param_block = true;
+                        // Reset paren_depth because param() is always at the start of a function/scriptblock
+                        // and there should be no unclosed parens from previous lines at this point
                         paren_depth = 0;
                     }
                     
@@ -209,10 +211,8 @@ impl Cli {
                         false
                     };
 
-                    // Track brace depth to know if we're inside a block
-                    // Update before checking needs_semicolon
+                    // Track brace depth (though not currently used, kept for future enhancements)
                     brace_depth += trimmed.matches('{').count() as i32;
-                    let was_inside_block = brace_depth > 0;
                     brace_depth -= trimmed.matches('}').count() as i32;
 
                     // Add semicolon to every line except:
