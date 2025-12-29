@@ -125,112 +125,31 @@ impl Cli {
 
         let text = render_template(String::from(script_content), &context);
 
-        // Collect all output in a buffer to ensure it can be properly handled
-        // by PowerShell's Invoke-Expression with $() command substitution
+        // Collect all output in a buffer
         let mut buffer = Vec::new();
         generate(shell, &mut cmd, bin_name, &mut buffer);
         generate(shell, &mut cmd, command, &mut buffer);
         buffer.write_all(text.as_bytes()).expect("Could not write to buffer");
 
-        // For PowerShell, add semicolons after statements to ensure the script works
-        // when used with Invoke-Expression "$(prog shell powershell)"
-        // This handles the case where PowerShell's $() joins lines with spaces in string context
+        // For PowerShell, remove duplicate 'using namespace' statements
+        // clap_complete generates them multiple times (once per command), but PowerShell
+        // requires all 'using' statements to appear before other statements
         if matches!(shell, Shell::PowerShell) {
             let script = String::from_utf8(buffer).expect("Invalid UTF-8 in generated script");
-            let mut in_param_block = false;
-            let mut paren_depth = 0;
-            let mut brace_depth = 0;
             let mut seen_using_namespace = std::collections::HashSet::new();
             
-            let lines: Vec<&str> = script.lines().collect();
-            let processed = lines
-                .iter()
-                .enumerate()
-                .filter_map(|(idx, line)| {
+            let processed = script
+                .lines()
+                .filter_map(|line| {
                     let trimmed = line.trim();
-
-                    // Skip empty lines or lines that are only whitespace
-                    if trimmed.is_empty() {
-                        return Some(line.to_string());
-                    }
-
-                    // Filter out duplicate 'using namespace' statements
-                    // PowerShell requires all 'using' statements to appear before other statements
-                    // clap_complete generates them multiple times (once per command), causing errors
-                    if trimmed.starts_with("using namespace ") {
-                        if !seen_using_namespace.insert(trimmed.to_string()) {
-                            // Skip duplicate using namespace statements
-                            return None;
-                        }
-                    }
-
-                    // Track if we're entering or leaving a param() block
-                    if trimmed.starts_with("param(") || trimmed.contains(" param(") {
-                        in_param_block = true;
-                        // Reset paren_depth because param() is always at the start of a function/scriptblock
-                        // and there should be no unclosed parens from previous lines at this point
-                        paren_depth = 0;
-                    }
                     
-                    if in_param_block {
-                        // Track parentheses depth within param block
-                        paren_depth += trimmed.matches('(').count() as i32;
-                        paren_depth -= trimmed.matches(')').count() as i32;
-                        
-                        // Exit param block when we close all parens
-                        if paren_depth <= 0 {
-                            in_param_block = false;
+                    // Filter out duplicate 'using namespace' statements
+                    if trimmed.starts_with("using namespace ") {
+                        if seen_using_namespace.insert(trimmed.to_string()) {
+                            Some(line.to_string())
+                        } else {
+                            None  // Skip duplicate
                         }
-                        
-                        // Don't add semicolons inside param blocks
-                        return Some(line.to_string());
-                    }
-
-                    // Check if the next line starts with a closing paren or brace
-                    // or a continuation operator - these indicate the current line is part of
-                    // a multi-line expression and shouldn't have a semicolon
-                    let next_line_continues = if idx + 1 < lines.len() {
-                        let next_trimmed = lines[idx + 1].trim();
-                        // Don't add semicolon if next line starts with closing paren or operators
-                        // But DO add semicolon if next line is just '}' or '};' and we're inside a block
-                        let is_closing_brace_only = next_trimmed == "}" || next_trimmed == "};";
-                        // Don't add semicolon if current line ends with } and next line is catch/finally/elseif/else
-                        let is_control_flow_continuation = trimmed.ends_with('}') && (
-                            next_trimmed.starts_with("catch")
-                            || next_trimmed.starts_with("finally")
-                            || next_trimmed.starts_with("elseif")
-                            || next_trimmed.starts_with("else")
-                        );
-                        is_control_flow_continuation || (!is_closing_brace_only && (
-                            next_trimmed.starts_with(')')
-                            || next_trimmed.starts_with('}')
-                            || next_trimmed.starts_with("-or")
-                            || next_trimmed.starts_with("-and")
-                        ))
-                    } else {
-                        false
-                    };
-
-                    // Track brace depth (though not currently used, kept for future enhancements)
-                    brace_depth += trimmed.matches('{').count() as i32;
-                    brace_depth -= trimmed.matches('}').count() as i32;
-
-                    // Add semicolon to every line except:
-                    // - Lines that end with continuation characters
-                    // - Comment lines (they don't need semicolons)
-                    // - Lines where the next line continues the expression
-                    let needs_semicolon = !next_line_continues
-                        && !trimmed.starts_with('#')
-                        && !trimmed.ends_with('{')
-                        && !trimmed.ends_with('(')
-                        && !trimmed.ends_with(',')
-                        && !trimmed.ends_with('|')
-                        && !trimmed.ends_with('\\')
-                        && !trimmed.ends_with("-or")
-                        && !trimmed.ends_with("-and");
-
-                    if needs_semicolon {
-                        Some(format!("{};", line))
                     } else {
                         Some(line.to_string())
                     }
