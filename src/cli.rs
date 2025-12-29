@@ -137,18 +137,18 @@ impl Cli {
         if matches!(shell, Shell::PowerShell) {
             let script = String::from_utf8(buffer).expect("Invalid UTF-8 in generated script");
             let mut seen_using_namespace = std::collections::HashSet::new();
-            
+
             let processed = script
                 .lines()
                 .filter_map(|line| {
                     let trimmed = line.trim();
-                    
+
                     // Filter out duplicate 'using namespace' statements
                     if trimmed.starts_with("using namespace ") {
                         if seen_using_namespace.insert(trimmed.to_string()) {
                             Some(line.to_string())
                         } else {
-                            None  // Skip duplicate
+                            None // Skip duplicate
                         }
                     } else {
                         Some(line.to_string())

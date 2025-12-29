@@ -1,5 +1,5 @@
-use std::{fs, path::PathBuf};
 use std::path::Path;
+use std::{fs, path::PathBuf};
 
 use dirs::home_dir;
 
@@ -265,32 +265,20 @@ mod tests {
         // Test case 2: Directory with only .DS_Store
         let ds_store_dir = temp_path.join("ds_store_only");
         fs::create_dir(&ds_store_dir).unwrap();
-        File::create(ds_store_dir.join(".DS_Store"))
-            .unwrap()
-            .write_all(b"test")
-            .unwrap();
+        File::create(ds_store_dir.join(".DS_Store")).unwrap().write_all(b"test").unwrap();
         assert!(is_dir_effectively_empty(&ds_store_dir));
 
         // Test case 3: Directory with other files
         let non_empty_dir = temp_path.join("non_empty");
         fs::create_dir(&non_empty_dir).unwrap();
-        File::create(non_empty_dir.join("somefile.txt"))
-            .unwrap()
-            .write_all(b"test")
-            .unwrap();
+        File::create(non_empty_dir.join("somefile.txt")).unwrap().write_all(b"test").unwrap();
         assert!(!is_dir_effectively_empty(&non_empty_dir));
 
         // Test case 4: Directory with .DS_Store and other files
         let mixed_dir = temp_path.join("mixed");
         fs::create_dir(&mixed_dir).unwrap();
-        File::create(mixed_dir.join(".DS_Store"))
-            .unwrap()
-            .write_all(b"test")
-            .unwrap();
-        File::create(mixed_dir.join("somefile.txt"))
-            .unwrap()
-            .write_all(b"test")
-            .unwrap();
+        File::create(mixed_dir.join(".DS_Store")).unwrap().write_all(b"test").unwrap();
+        File::create(mixed_dir.join("somefile.txt")).unwrap().write_all(b"test").unwrap();
         assert!(!is_dir_effectively_empty(&mixed_dir));
     }
 
@@ -310,10 +298,7 @@ mod tests {
         fs::create_dir_all(&child_dir).unwrap();
 
         // Add .DS_Store to parent directory
-        File::create(parent_dir.join(".DS_Store"))
-            .unwrap()
-            .write_all(b"test")
-            .unwrap();
+        File::create(parent_dir.join(".DS_Store")).unwrap().write_all(b"test").unwrap();
 
         // Remove child directory with empty parents cleanup
         remove_dir_with_empty_parents(&child_dir, Some(&base_path)).unwrap();
@@ -339,10 +324,7 @@ mod tests {
         fs::create_dir_all(&child_dir).unwrap();
 
         // Add a regular file to parent directory (not just .DS_Store)
-        File::create(parent_dir.join("important.txt"))
-            .unwrap()
-            .write_all(b"test")
-            .unwrap();
+        File::create(parent_dir.join("important.txt")).unwrap().write_all(b"test").unwrap();
 
         // Remove child directory with empty parents cleanup
         remove_dir_with_empty_parents(&child_dir, Some(&base_path)).unwrap();
