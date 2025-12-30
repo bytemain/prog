@@ -43,11 +43,27 @@ You can also list all repositories:
 
 ## Shell Integration
 
+### Bash/Zsh
+
 Add the following code to your shell configuration file (e.g., `~/.bashrc`, `~/.zshrc`):
 
 ```sh
+eval "$(prog shell bash)"
+# or for zsh:
 eval "$(prog shell zsh)"
 ```
+
+### PowerShell
+
+Add the following code to your PowerShell profile (e.g., `$PROFILE`):
+
+```powershell
+Invoke-Expression (prog shell powershell | Out-String)
+```
+
+**Note:** Using `Invoke-Expression "$(prog shell powershell)"` (with quotes around `$()`) will not work due to PowerShell's command substitution behavior. Use `Out-String` as shown above.
+
+### Using the integration
 
 Then you can use `p` to change to the repository directory without needing to paste the path:
 

@@ -125,35 +125,33 @@ impl Cli {
 
         let text = render_template(String::from(script_content), &context);
 
-        // Collect all output in a buffer to ensure it can be properly handled
-        // by PowerShell's Invoke-Expression with $() command substitution
+        // Collect all output in a buffer
         let mut buffer = Vec::new();
         generate(shell, &mut cmd, bin_name, &mut buffer);
         generate(shell, &mut cmd, command, &mut buffer);
         buffer.write_all(text.as_bytes()).expect("Could not write to buffer");
 
-        // For PowerShell, add semicolons after key top-level statements to ensure the script works
-        // when used with Invoke-Expression "$(prog shell powershell)"
-        // This handles the case where PowerShell's $() joins lines with spaces in string context
+        // For PowerShell, remove duplicate 'using namespace' statements
+        // clap_complete generates them multiple times (once per command), but PowerShell
+        // requires all 'using' statements to appear before other statements
         if matches!(shell, Shell::PowerShell) {
             let script = String::from_utf8(buffer).expect("Invalid UTF-8 in generated script");
-            let mut in_block = 0; // Track brace depth
+            let mut seen_using_namespace = std::collections::HashSet::new();
+
             let processed = script
                 .lines()
-                .map(|line| {
+                .filter_map(|line| {
                     let trimmed = line.trim();
 
-                    // Track brace depth to identify top-level vs nested statements
-                    in_block += trimmed.matches('{').count() as i32;
-                    in_block -= trimmed.matches('}').count() as i32;
-
-                    // Add semicolon to top-level statements that need it
-                    // Only when we're at depth 0 after processing the line
-                    if in_block == 0 && (trimmed.starts_with("using namespace ") || trimmed == "}")
-                    {
-                        format!("{};", line)
+                    // Filter out duplicate 'using namespace' statements
+                    if trimmed.starts_with("using namespace ") {
+                        if seen_using_namespace.insert(trimmed.to_string()) {
+                            Some(line.to_string())
+                        } else {
+                            None // Skip duplicate
+                        }
                     } else {
-                        line.to_string()
+                        Some(line.to_string())
                     }
                 })
                 .collect::<Vec<_>>()
