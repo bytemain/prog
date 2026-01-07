@@ -23,28 +23,24 @@ function __prog_p {
         prog $args[1]
     }
     elseif ($args[0] -eq 'add') {
-        prog @args
-        if ($LASTEXITCODE -ne 0) {
-            return $LASTEXITCODE
+        $restArgs = $args[1..($args.Count - 1)]
+        $output = $null
+        try {
+            $output = prog add --cd -- @restArgs
+            if ($LASTEXITCODE -ne 0) {
+                return $LASTEXITCODE
+            }
+        }
+        catch {
+            return 1
         }
         
-        # Extract repo name from the URL (second argument is always the URL)
-        $url = $args[1]
-        $repoName = ($url -split '/')[-1] -replace '\.git$', ''
-        
-        if ($repoName) {
-            $result = $null
-            try {
-                $result = prog find --query -- $repoName
-                if ($LASTEXITCODE -ne 0) {
-                    return $LASTEXITCODE
-                }
-            }
-            catch {
-                return 1
-            }
-            
-            if ($result) {
+        if ($output) {
+            # Print the output and get the last line as the path for cd
+            Write-Output $output
+            $lines = $output -split "`n"
+            $result = $lines[-1].Trim()
+            if ($result -and (Test-Path -Path $result -PathType Container)) {
                 __prog_cd $result
             }
         }

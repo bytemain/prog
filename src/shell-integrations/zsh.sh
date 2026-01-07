@@ -16,17 +16,14 @@ function __prog_p() {
             \command prog "$2"
     elif [[ "$1" = "add" ]]
     then
-            \command prog "$@" || return $?
-            # Extract repo name from the URL (second argument is always the URL)
-            \builtin local url="$2"
-            \builtin local repo_name="${url##*/}"
-            repo_name="${repo_name%.git}"
-            if [[ -n "$repo_name" ]]
-            then
-                \builtin local result
-                result="$(\command prog find --query -- "$repo_name")" || return $?
-                [[ -n "$result" ]] && __prog_cd "${result}"
-            fi
+            shift
+            \builtin local output
+            output="$(\command prog add --cd -- "$@")" || return $?
+            echo "$output"
+            # Get the last line as the path for cd
+            \builtin local result
+            result="$(echo "$output" | tail -n 1)"
+            [[ -n "$result" ]] && [[ -d "$result" ]] && __prog_cd "${result}"
     else
             if {{if_check_statement}} 
             then

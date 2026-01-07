@@ -3,10 +3,10 @@ use std::path::Path;
 use crate::helpers::colors::Colorize;
 use crate::helpers::git::parse_git_url;
 use crate::helpers::git::remote_url_is_valid;
-use crate::{context::Context, helpers::platform};
+use crate::{commands::find, context::Context, helpers::platform};
 use log::debug;
 
-pub fn run(c: &mut Context, url: &str, rest: &[String]) {
+pub fn run(c: &mut Context, url: &str, cd: bool, rest: &[String]) {
     let base_dir = c.get_base_dir().unwrap();
     let url = c.config().replace_alias(url.to_owned());
 
@@ -36,6 +36,10 @@ pub fn run(c: &mut Context, url: &str, rest: &[String]) {
     if full_path.exists() {
         println!("{}", format!("Repo already exists: {}", full_path.display()).green());
         platform::clipboard::copy_path(full_path.to_str().unwrap());
+        if cd {
+            // Output path for shell cd integration
+            find::query(c, &name);
+        }
         return;
     }
 
@@ -56,6 +60,11 @@ pub fn run(c: &mut Context, url: &str, rest: &[String]) {
 
     println!("{}", format!("Cloned to: {}", target_path).green());
     platform::clipboard::copy_path(target_path);
+
+    if cd {
+        // Output path for shell cd integration
+        find::query(c, &name);
+    }
 }
 
 #[cfg(test)]

@@ -16,7 +16,7 @@ fn main() {
 
     let cli = Cli::new();
     match cli.command {
-        Some(ECommands::Add { url, rest }) => commands::add::run(&mut context, &url, &rest),
+        Some(ECommands::Add { url, cd, rest }) => commands::add::run(&mut context, &url, cd, &rest),
         Some(ECommands::Find { keyword, query }) => commands::find::run(&context, &keyword, query),
         Some(ECommands::Sync) => commands::sync::run(&context),
         Some(ECommands::Import { path }) => commands::import::run(&mut context, path),
