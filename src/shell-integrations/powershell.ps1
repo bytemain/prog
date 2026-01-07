@@ -22,6 +22,23 @@ function __prog_p {
     elseif ($args.Count -eq 2 -and $args[0] -eq '--') {
         prog $args[1]
     }
+    elseif ($args[0] -eq 'add') {
+        $restArgs = $args[1..($args.Count - 1)]
+        $result = $null
+        try {
+            $result = prog add --query -- @restArgs
+            if ($LASTEXITCODE -ne 0) {
+                return $LASTEXITCODE
+            }
+        }
+        catch {
+            return 1
+        }
+        
+        if ($result) {
+            __prog_cd $result
+        }
+    }
     else {
         # {{if_check_statement}} would be replaced during template processing
         if ({{if_check_statement}}) {

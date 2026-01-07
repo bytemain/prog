@@ -11,6 +11,8 @@ pub enum ECommands {
     #[command(about = "Add a new repository")]
     Add {
         url: String,
+        #[arg(short = 'q', long = "query", help = "Only output the cloned path")]
+        query: bool,
         #[arg(allow_hyphen_values = true)]
         rest: Vec<String>,
     },

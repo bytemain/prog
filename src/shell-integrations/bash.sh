@@ -11,6 +11,11 @@ function __prog_p() {
         __prog_cd "$1"
     elif [[ "$#" -eq 2 ]] && [[ "$1" = "--" ]]; then
         \command prog "$2"
+    elif [[ "$1" = "add" ]]; then
+        shift
+        local result
+        result="$(\command prog add --query -- "$@")" || return $?
+        [[ -n "$result" ]] && __prog_cd "${result}"
     else
         if {{if_check_statement}}; then
             \command prog "$@"
