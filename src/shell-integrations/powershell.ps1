@@ -28,24 +28,48 @@ function __prog_p {
             return $LASTEXITCODE
         }
         
-        # Extract repo name from the URL (last path component without .git)
-        $url = $args[1]
-        $repoName = ($url -split '/')[-1] -replace '\.git$', ''
+        # Extract repo name from arguments (find first non-flag argument after 'add')
+        $url = $null
+        $skipNext = $false
+        for ($i = 1; $i -lt $args.Count; $i++) {
+            $arg = $args[$i]
+            if ($skipNext) {
+                $skipNext = $false
+                continue
+            }
+            # Skip flags and their values
+            if ($arg.StartsWith('--')) {
+                continue
+            }
+            elseif ($arg.StartsWith('-')) {
+                # Single-letter flags might have values
+                $skipNext = $true
+                continue
+            }
+            else {
+                $url = $arg
+                break
+            }
+        }
         
-        if ($repoName) {
-            $result = $null
-            try {
-                $result = prog find --query -- $repoName
-                if ($LASTEXITCODE -ne 0) {
-                    return $LASTEXITCODE
-                }
-            }
-            catch {
-                return 1
-            }
+        if ($url) {
+            $repoName = ($url -split '/')[-1] -replace '\.git$', ''
             
-            if ($result) {
-                __prog_cd $result
+            if ($repoName) {
+                $result = $null
+                try {
+                    $result = prog find --query -- $repoName
+                    if ($LASTEXITCODE -ne 0) {
+                        return $LASTEXITCODE
+                    }
+                }
+                catch {
+                    return 1
+                }
+                
+                if ($result) {
+                    __prog_cd $result
+                }
             }
         }
     }

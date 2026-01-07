@@ -17,15 +17,37 @@ function __prog_p() {
     elif [[ "$1" = "add" ]]
     then
             \command prog "$@" || return $?
-            # Extract repo name from the URL (last path component without .git)
-            \builtin local url="$2"
-            \builtin local repo_name="${url##*/}"
-            repo_name="${repo_name%.git}"
-            if [[ -n "$repo_name" ]]
+            # Extract repo name from arguments (find first non-flag argument after 'add')
+            \builtin local url=""
+            \builtin local skip_next=false
+            shift  # skip 'add'
+            for arg in "$@"; do
+                if $skip_next; then
+                    skip_next=false
+                    continue
+                fi
+                # Skip flags and their values
+                if [[ "$arg" == --* ]]; then
+                    continue
+                elif [[ "$arg" == -* ]]; then
+                    # Single-letter flags might have values
+                    skip_next=true
+                    continue
+                else
+                    url="$arg"
+                    break
+                fi
+            done
+            if [[ -n "$url" ]]
             then
-                \builtin local result
-                result="$(\command prog find --query -- "$repo_name")" || return $?
-                [[ -n "$result" ]] && __prog_cd "${result}"
+                \builtin local repo_name="${url##*/}"
+                repo_name="${repo_name%.git}"
+                if [[ -n "$repo_name" ]]
+                then
+                    \builtin local result
+                    result="$(\command prog find --query -- "$repo_name")" || return $?
+                    [[ -n "$result" ]] && __prog_cd "${result}"
+                fi
             fi
     else
             if {{if_check_statement}} 
