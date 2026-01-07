@@ -23,20 +23,30 @@ function __prog_p {
         prog $args[1]
     }
     elseif ($args[0] -eq 'add') {
-        $restArgs = $args[1..($args.Count - 1)]
-        $result = $null
-        try {
-            $result = prog add --query -- @restArgs
-            if ($LASTEXITCODE -ne 0) {
-                return $LASTEXITCODE
-            }
-        }
-        catch {
-            return 1
+        prog @args
+        if ($LASTEXITCODE -ne 0) {
+            return $LASTEXITCODE
         }
         
-        if ($result) {
-            __prog_cd $result
+        # Extract repo name from the URL (last path component without .git)
+        $url = $args[1]
+        $repoName = ($url -split '/')[-1] -replace '\.git$', ''
+        
+        if ($repoName) {
+            $result = $null
+            try {
+                $result = prog find --query -- $repoName
+                if ($LASTEXITCODE -ne 0) {
+                    return $LASTEXITCODE
+                }
+            }
+            catch {
+                return 1
+            }
+            
+            if ($result) {
+                __prog_cd $result
+            }
         }
     }
     else {

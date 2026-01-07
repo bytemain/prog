@@ -6,7 +6,7 @@ use crate::helpers::git::remote_url_is_valid;
 use crate::{context::Context, helpers::platform};
 use log::debug;
 
-pub fn run(c: &mut Context, url: &str, query: bool, rest: &[String]) {
+pub fn run(c: &mut Context, url: &str, rest: &[String]) {
     let base_dir = c.get_base_dir().unwrap();
     let url = c.config().replace_alias(url.to_owned());
 
@@ -34,22 +34,15 @@ pub fn run(c: &mut Context, url: &str, query: bool, rest: &[String]) {
     let full_path = Path::new(&base_dir).join(&host).join(&owner).join(&name);
 
     if full_path.exists() {
-        let target_path = full_path.to_str().unwrap();
-        if query {
-            println!("{}", target_path);
-        } else {
-            println!("{}", format!("Repo already exists: {}", full_path.display()).green());
-            platform::clipboard::copy_path(target_path);
-        }
+        println!("{}", format!("Repo already exists: {}", full_path.display()).green());
+        platform::clipboard::copy_path(full_path.to_str().unwrap());
         return;
     }
 
     debug!("target full path: {}", full_path.display());
     let target_path =
         full_path.to_str().unwrap_or_else(|| panic!("Cannot construct full path for {}", url));
-    if !query {
-        println!("{}", format!("Add: {}", url).green());
-    }
+    println!("{}", format!("Add: {}", url).green());
 
     let result = crate::helpers::git::clone(&url, rest, target_path);
 
@@ -61,12 +54,8 @@ pub fn run(c: &mut Context, url: &str, query: bool, rest: &[String]) {
     c.database_mut().record_item(&base_dir, &url, &host, &name, &owner, target_path);
     c.database_mut().save().unwrap();
 
-    if query {
-        println!("{}", target_path);
-    } else {
-        println!("{}", format!("Cloned to: {}", target_path).green());
-        platform::clipboard::copy_path(target_path);
-    }
+    println!("{}", format!("Cloned to: {}", target_path).green());
+    platform::clipboard::copy_path(target_path);
 }
 
 #[cfg(test)]

@@ -12,10 +12,16 @@ function __prog_p() {
     elif [[ "$#" -eq 2 ]] && [[ "$1" = "--" ]]; then
         \command prog "$2"
     elif [[ "$1" = "add" ]]; then
-        shift
-        local result
-        result="$(\command prog add --query -- "$@")" || return $?
-        [[ -n "$result" ]] && __prog_cd "${result}"
+        \command prog "$@" || return $?
+        # Extract repo name from the URL (last path component without .git)
+        local url="$2"
+        local repo_name="${url##*/}"
+        repo_name="${repo_name%.git}"
+        if [[ -n "$repo_name" ]]; then
+            local result
+            result="$(\command prog find --query -- "$repo_name")" || return $?
+            [[ -n "$result" ]] && __prog_cd "${result}"
+        fi
     else
         if {{if_check_statement}}; then
             \command prog "$@"
