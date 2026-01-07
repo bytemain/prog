@@ -3,7 +3,7 @@ use std::path::Path;
 use crate::helpers::colors::Colorize;
 use crate::helpers::git::parse_git_url;
 use crate::helpers::git::remote_url_is_valid;
-use crate::{commands::find, context::Context, helpers::platform};
+use crate::{context::Context, helpers::platform};
 use log::debug;
 
 pub fn run(c: &mut Context, url: &str, cd: bool, rest: &[String]) {
@@ -32,20 +32,20 @@ pub fn run(c: &mut Context, url: &str, cd: bool, rest: &[String]) {
     debug!("host: {host}, full name: {fullname}, base dir: {base_dir}");
 
     let full_path = Path::new(&base_dir).join(&host).join(&owner).join(&name);
+    let target_path =
+        full_path.to_str().unwrap_or_else(|| panic!("Cannot construct full path for {}", url));
 
     if full_path.exists() {
         println!("{}", format!("Repo already exists: {}", full_path.display()).green());
-        platform::clipboard::copy_path(full_path.to_str().unwrap());
+        platform::clipboard::copy_path(target_path);
         if cd {
             // Output path for shell cd integration
-            find::query(c, &name);
+            println!("{}", target_path);
         }
         return;
     }
 
     debug!("target full path: {}", full_path.display());
-    let target_path =
-        full_path.to_str().unwrap_or_else(|| panic!("Cannot construct full path for {}", url));
     println!("{}", format!("Add: {}", url).green());
 
     let result = crate::helpers::git::clone(&url, rest, target_path);
@@ -63,7 +63,7 @@ pub fn run(c: &mut Context, url: &str, cd: bool, rest: &[String]) {
 
     if cd {
         // Output path for shell cd integration
-        find::query(c, &name);
+        println!("{}", target_path);
     }
 }
 
