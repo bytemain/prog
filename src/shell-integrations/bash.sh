@@ -13,35 +13,14 @@ function __prog_p() {
         \command prog "$2"
     elif [[ "$1" = "add" ]]; then
         \command prog "$@" || return $?
-        # Extract repo name from arguments (find first non-flag argument after 'add')
-        local url=""
-        local skip_next=false
-        shift  # skip 'add'
-        for arg in "$@"; do
-            if $skip_next; then
-                skip_next=false
-                continue
-            fi
-            # Skip flags and their values
-            if [[ "$arg" == --* ]]; then
-                continue
-            elif [[ "$arg" == -* ]]; then
-                # Single-letter flags might have values
-                skip_next=true
-                continue
-            else
-                url="$arg"
-                break
-            fi
-        done
-        if [[ -n "$url" ]]; then
-            local repo_name="${url##*/}"
-            repo_name="${repo_name%.git}"
-            if [[ -n "$repo_name" ]]; then
-                local result
-                result="$(\command prog find --query -- "$repo_name")" || return $?
-                [[ -n "$result" ]] && __prog_cd "${result}"
-            fi
+        # Extract repo name from the URL (second argument is always the URL)
+        local url="$2"
+        local repo_name="${url##*/}"
+        repo_name="${repo_name%.git}"
+        if [[ -n "$repo_name" ]]; then
+            local result
+            result="$(\command prog find --query -- "$repo_name")" || return $?
+            [[ -n "$result" ]] && __prog_cd "${result}"
         fi
     else
         if {{if_check_statement}}; then
