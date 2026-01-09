@@ -35,10 +35,23 @@ fn print_found_item_path(item: &FoundItem) {
     println!("{}", item.file_path);
 }
 
+/// Extracts a search term from the input.
+/// If the input looks like a git URL, extracts the fullname (owner/repo) from it.
+/// Otherwise, returns the original input as-is.
+fn extract_search_term(input: &str) -> String {
+    if let Some(parsed) = git::parse_git_url(input) {
+        if git::remote_url_is_valid(&parsed) {
+            return parsed.fullname;
+        }
+    }
+    input.to_string()
+}
+
 pub fn find_keyword(c: &Context, keyword: &str) -> Option<Vec<FoundItem>> {
     c.auto_sync_silent();
 
-    let result = c.database_mut().find(keyword);
+    let search_term = extract_search_term(keyword);
+    let result = c.database_mut().find(&search_term);
     if result.is_empty() {
         return None;
     }
@@ -139,4 +152,61 @@ pub fn find(c: &Context, keyword: &str) -> bool {
     }
 
     false
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_extract_search_term_scp_like_url() {
+        let result = extract_search_term("git@github.com:bytemain/prog.git");
+        assert_eq!(result, "bytemain/prog");
+    }
+
+    #[test]
+    fn test_extract_search_term_https_url() {
+        let result = extract_search_term("https://github.com/bytemain/prog.git");
+        assert_eq!(result, "bytemain/prog");
+    }
+
+    #[test]
+    fn test_extract_search_term_https_url_without_git_suffix() {
+        let result = extract_search_term("https://github.com/bytemain/prog");
+        assert_eq!(result, "bytemain/prog");
+    }
+
+    #[test]
+    fn test_extract_search_term_ssh_url() {
+        let result = extract_search_term("ssh://git@github.com/owner/repo");
+        assert_eq!(result, "owner/repo");
+    }
+
+    #[test]
+    fn test_extract_search_term_plain_keyword() {
+        let result = extract_search_term("prog");
+        assert_eq!(result, "prog");
+    }
+
+    #[test]
+    fn test_extract_search_term_plain_keyword_with_slash() {
+        // This could be interpreted as owner/repo, but no host, so it's not a valid git URL
+        let result = extract_search_term("bytemain/prog");
+        // Note: parse_git_url parses this as host="bytemain", owner="prog", but repo is empty
+        // so remote_url_is_valid returns false and we fall back to the input
+        assert_eq!(result, "bytemain/prog");
+    }
+
+    #[test]
+    fn test_extract_search_term_empty_string() {
+        let result = extract_search_term("");
+        assert_eq!(result, "");
+    }
+
+    #[test]
+    fn test_extract_search_term_partial_url_invalid() {
+        // Invalid URL without owner/repo should return original
+        let result = extract_search_term("git@github.com:owner");
+        assert_eq!(result, "git@github.com:owner");
+    }
 }
