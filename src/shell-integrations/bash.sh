@@ -11,6 +11,13 @@ function __prog_p() {
         __prog_cd "$1"
     elif [[ "$#" -eq 2 ]] && [[ "$1" = "--" ]]; then
         \command prog "$2"
+    elif [[ "$1" = "add" ]] && [[ "$#" -ge 2 ]]; then
+        # Run prog add and then cd to the cloned repo
+        local url="$2"
+        \command prog "$@" || return $?
+        local result
+        result="$(\command prog find --query -- "$url")" || return $?
+        [[ -n "$result" ]] && __prog_cd "${result}"
     else
         if {{if_check_statement}}; then
             \command prog "$@"

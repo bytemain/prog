@@ -22,6 +22,28 @@ function __prog_p {
     elseif ($args.Count -eq 2 -and $args[0] -eq '--') {
         prog $args[1]
     }
+    elseif ($args[0] -eq 'add' -and $args.Count -ge 2) {
+        # Run prog add and then cd to the cloned repo
+        $url = $args[1]
+        prog @args
+        if ($LASTEXITCODE -ne 0) {
+            return $LASTEXITCODE
+        }
+        $result = $null
+        try {
+            $result = prog find --query -- $url
+            if ($LASTEXITCODE -ne 0) {
+                return $LASTEXITCODE
+            }
+        }
+        catch {
+            return 1
+        }
+        
+        if ($result) {
+            __prog_cd $result
+        }
+    }
     else {
         # {{if_check_statement}} would be replaced during template processing
         if ({{if_check_statement}}) {
