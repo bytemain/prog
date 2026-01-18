@@ -118,15 +118,17 @@ impl Data {
                 return rank_cmp;
             }
 
-            let dist_a = levenshtein(&a.repo.repo.to_lowercase(), &keyword);
-            let dist_b = levenshtein(&b.repo.repo.to_lowercase(), &keyword);
+            let repo_a = a.repo.repo.to_lowercase();
+            let repo_b = b.repo.repo.to_lowercase();
+            let dist_a = levenshtein(&repo_a, &keyword);
+            let dist_b = levenshtein(&repo_b, &keyword);
 
             let dist_cmp = dist_a.cmp(&dist_b);
             if dist_cmp != std::cmp::Ordering::Equal {
                 return dist_cmp;
             }
 
-            a.repo.repo.to_lowercase().cmp(&b.repo.repo.to_lowercase())
+            repo_a.cmp(&repo_b)
         });
 
         results

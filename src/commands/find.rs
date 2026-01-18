@@ -64,10 +64,10 @@ fn match_hint(
     match match_kind {
         MatchKind::PathContains => None,
         MatchKind::RepoExact | MatchKind::RepoContains => Some(format!("repo: {}", repo.repo)),
-        MatchKind::FullNameExact
-        | MatchKind::OwnerExact
-        | MatchKind::OwnerContains
-        | MatchKind::RemoteContains => {
+        MatchKind::FullNameExact => {
+            Some(format!("remote: {}/{}/{}", repo.host, repo.owner, repo.repo))
+        }
+        MatchKind::OwnerExact | MatchKind::OwnerContains | MatchKind::RemoteContains => {
             Some(format!("remote: {}/{}/{}", repo.host, repo.owner, repo.repo))
         }
     }
