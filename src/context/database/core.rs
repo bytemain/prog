@@ -430,6 +430,7 @@ mod tests {
             "github.com",
             "versa-vault",
             "version-fox",
+            // Non-standard path to ensure owner matching works when the folder name differs.
             "/base/pyenv-versions",
         );
 

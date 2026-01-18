@@ -257,6 +257,7 @@ mod tests {
             owner: "version-fox".to_string(),
             remote_url: "git@github.com:version-fox/versa-vault.git".to_string(),
             base_dir: "/base".to_string(),
+            // Non-standard path to mirror repositories cloned outside owner/repo structure.
             full_path: "/base/pyenv-versions".to_string(),
         };
 
