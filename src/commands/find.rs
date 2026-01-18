@@ -1,5 +1,8 @@
 use crate::{
-    context::Context,
+    context::{
+        Context,
+        database::{MatchKind, MatchedRepo},
+    },
     helpers::{git, path, platform},
 };
 use inquire::Select;
@@ -13,15 +16,22 @@ use std::fmt::{Display, Formatter, Result as FmtResult};
 pub struct FoundItem {
     pub file_path: String,
     pub branch: String,
+    pub match_hint: Option<String>,
 }
 
 impl Display for FoundItem {
     fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
         let display_path = path::contract_tilde(&self.file_path);
-        if self.branch.trim().is_empty() {
-            write!(f, "{}", display_path)
+        let base = if self.branch.trim().is_empty() {
+            display_path
         } else {
-            write!(f, "{} @{}", display_path, self.branch)
+            format!("{} @{}", display_path, self.branch)
+        };
+
+        if let Some(hint) = self.match_hint.as_ref().filter(|hint| !hint.trim().is_empty()) {
+            write!(f, "{} ({})", base, hint)
+        } else {
+            write!(f, "{}", base)
         }
     }
 }
@@ -47,11 +57,27 @@ fn extract_search_term(input: &str) -> String {
     input.to_string()
 }
 
+fn match_hint(
+    repo: &crate::context::database::models::Repo,
+    match_kind: MatchKind,
+) -> Option<String> {
+    match match_kind {
+        MatchKind::PathContains => None,
+        MatchKind::RepoExact | MatchKind::RepoContains => Some(format!("repo: {}", repo.repo)),
+        MatchKind::FullNameExact
+        | MatchKind::OwnerExact
+        | MatchKind::OwnerContains
+        | MatchKind::RemoteContains => {
+            Some(format!("remote: {}/{}/{}", repo.host, repo.owner, repo.repo))
+        }
+    }
+}
+
 pub fn find_keyword(c: &Context, keyword: &str) -> Option<Vec<FoundItem>> {
     c.auto_sync_silent();
 
     let search_term = extract_search_term(keyword);
-    let result = c.database_mut().find(&search_term);
+    let result: Vec<MatchedRepo> = c.database_mut().find(&search_term);
     if result.is_empty() {
         return None;
     }
@@ -61,7 +87,8 @@ pub fn find_keyword(c: &Context, keyword: &str) -> Option<Vec<FoundItem>> {
     let mut seen: HashSet<String> = HashSet::new();
 
     let mut should_sync = false;
-    for repo in result {
+    for matched in result {
+        let repo = &matched.repo;
         let path_str: String = repo.full_path.clone();
         if path::exists(&path_str) {
             // Repo path entry with branch
@@ -69,6 +96,7 @@ pub fn find_keyword(c: &Context, keyword: &str) -> Option<Vec<FoundItem>> {
                 options.push(FoundItem {
                     file_path: path_str.clone(),
                     branch: git::get_branch(&path_str),
+                    match_hint: match_hint(repo, matched.match_kind),
                 });
             }
 
@@ -76,7 +104,11 @@ pub fn find_keyword(c: &Context, keyword: &str) -> Option<Vec<FoundItem>> {
             if repo.host == keyword {
                 let host_path = repo.host_fs_path();
                 if seen.insert(host_path.clone()) {
-                    options.push(FoundItem { file_path: host_path, branch: String::new() });
+                    options.push(FoundItem {
+                        file_path: host_path,
+                        branch: String::new(),
+                        match_hint: None,
+                    });
                 }
             }
 
@@ -84,7 +116,11 @@ pub fn find_keyword(c: &Context, keyword: &str) -> Option<Vec<FoundItem>> {
             if repo.owner == keyword {
                 let owner_path = repo.owner_fs_path();
                 if seen.insert(owner_path.clone()) {
-                    options.push(FoundItem { file_path: owner_path, branch: String::new() });
+                    options.push(FoundItem {
+                        file_path: owner_path,
+                        branch: String::new(),
+                        match_hint: None,
+                    });
                 }
             }
         } else {
@@ -208,5 +244,35 @@ mod tests {
         // Invalid URL without owner/repo should return original
         let result = extract_search_term("git@github.com:owner");
         assert_eq!(result, "git@github.com:owner");
+    }
+
+    #[test]
+    fn test_match_hint_owner_match_includes_remote() {
+        let now = chrono::Utc::now().naive_utc();
+        let repo = crate::context::database::models::Repo {
+            created_at: now,
+            updated_at: now,
+            host: "github.com".to_string(),
+            repo: "versa-vault".to_string(),
+            owner: "version-fox".to_string(),
+            remote_url: "git@github.com:version-fox/versa-vault.git".to_string(),
+            base_dir: "/base".to_string(),
+            full_path: "/base/pyenv-versions".to_string(),
+        };
+
+        let hint = match_hint(&repo, MatchKind::OwnerExact);
+
+        assert_eq!(hint, Some("remote: github.com/version-fox/versa-vault".to_string()));
+    }
+
+    #[test]
+    fn test_found_item_display_with_hint() {
+        let item = FoundItem {
+            file_path: "/tmp/repo".to_string(),
+            branch: "main".to_string(),
+            match_hint: Some("repo: prog".to_string()),
+        };
+
+        assert_eq!(format!("{}", item), "/tmp/repo @main (repo: prog)");
     }
 }
