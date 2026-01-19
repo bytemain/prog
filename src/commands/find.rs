@@ -105,8 +105,8 @@ fn format_display_line_with_len(base: &str, branch: &str, width: usize, base_len
         return base.to_string();
     }
 
-    let padded_width = width.max(base_len);
-    let padding = padded_width.saturating_sub(base_len) + BRANCH_PADDING;
+    let effective_width = width.max(base_len);
+    let padding = effective_width.saturating_sub(base_len) + BRANCH_PADDING;
     format!("{}{}[{}]", base, " ".repeat(padding), branch)
 }
 
