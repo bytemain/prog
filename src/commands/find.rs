@@ -100,6 +100,7 @@ fn format_display_line(base: &str, branch: &str, max_width: usize) -> String {
     format_display_line_with_len(base, branch, max_width, base_len)
 }
 
+/// Formats a full display line when the caller has already computed the base label length.
 fn format_display_line_with_len(
     base: &str,
     branch: &str,
