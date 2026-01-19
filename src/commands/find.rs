@@ -7,6 +7,7 @@ use crate::{
 };
 use inquire::Select;
 use std::collections::HashSet;
+use std::path::Path;
 
 use super::printer::error::handle_inquire_error;
 
@@ -17,22 +18,18 @@ pub struct FoundItem {
     pub file_path: String,
     pub branch: String,
     pub match_hint: Option<String>,
+    pub display_label: Option<String>,
 }
 
 impl Display for FoundItem {
     fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
-        let display_path = path::contract_tilde(&self.file_path);
-        let base = if self.branch.trim().is_empty() {
-            display_path
-        } else {
-            format!("{} @{}", display_path, self.branch)
-        };
-
-        if let Some(hint) = self.match_hint.as_ref().filter(|hint| !hint.trim().is_empty()) {
-            write!(f, "{} ({})", base, hint)
-        } else {
-            write!(f, "{}", base)
+        if let Some(display_label) = self.display_label.as_ref() {
+            return write!(f, "{}", display_label);
         }
+
+        let display_path = path::contract_tilde(&self.file_path);
+        let base = build_left_label(&display_path, self.match_hint.as_deref());
+        format_display_line(&base, &self.branch, base.chars().count()).fmt(f)
     }
 }
 
@@ -60,10 +57,22 @@ fn extract_search_term(input: &str) -> String {
 fn match_hint(
     repo: &crate::context::database::models::Repo,
     match_kind: MatchKind,
+    file_path: &str,
 ) -> Option<String> {
+    let repo_folder_matches = Path::new(file_path)
+        .file_name()
+        .map(|name| name.to_string_lossy().to_lowercase() == repo.repo.to_lowercase())
+        .unwrap_or(false);
+
     match match_kind {
         MatchKind::PathContains => None,
-        MatchKind::RepoExact | MatchKind::RepoContains => Some(format!("repo: {}", repo.repo)),
+        MatchKind::RepoExact | MatchKind::RepoContains => {
+            if repo_folder_matches {
+                None
+            } else {
+                Some(format!("repo: {}", repo.repo))
+            }
+        }
         MatchKind::FullNameExact => {
             Some(format!("remote: {}/{}/{}", repo.host, repo.owner, repo.repo))
         }
@@ -71,6 +80,24 @@ fn match_hint(
             Some(format!("remote: {}/{}/{}", repo.host, repo.owner, repo.repo))
         }
     }
+}
+
+fn build_left_label(display_path: &str, match_hint: Option<&str>) -> String {
+    if let Some(hint) = match_hint.filter(|hint| !hint.trim().is_empty()) {
+        format!("{} ({})", display_path, hint)
+    } else {
+        display_path.to_string()
+    }
+}
+
+fn format_display_line(base: &str, branch: &str, width: usize) -> String {
+    if branch.trim().is_empty() {
+        return base.to_string();
+    }
+
+    let base_len = base.chars().count();
+    let padding = width.saturating_sub(base_len) + 2;
+    format!("{}{}[{}]", base, " ".repeat(padding), branch)
 }
 
 pub fn find_keyword(c: &Context, keyword: &str) -> Option<Vec<FoundItem>> {
@@ -96,7 +123,8 @@ pub fn find_keyword(c: &Context, keyword: &str) -> Option<Vec<FoundItem>> {
                 options.push(FoundItem {
                     file_path: path_str.clone(),
                     branch: git::get_branch(&path_str),
-                    match_hint: match_hint(repo, matched.match_kind),
+                    match_hint: match_hint(repo, matched.match_kind, &path_str),
+                    display_label: None,
                 });
             }
 
@@ -108,6 +136,7 @@ pub fn find_keyword(c: &Context, keyword: &str) -> Option<Vec<FoundItem>> {
                         file_path: host_path,
                         branch: String::new(),
                         match_hint: None,
+                        display_label: None,
                     });
                 }
             }
@@ -120,6 +149,7 @@ pub fn find_keyword(c: &Context, keyword: &str) -> Option<Vec<FoundItem>> {
                         file_path: owner_path,
                         branch: String::new(),
                         match_hint: None,
+                        display_label: None,
                     });
                 }
             }
@@ -130,6 +160,17 @@ pub fn find_keyword(c: &Context, keyword: &str) -> Option<Vec<FoundItem>> {
 
     if should_sync {
         c.sync_silent();
+    }
+
+    let display_paths: Vec<String> = options
+        .iter()
+        .map(|item| {
+            build_left_label(&path::contract_tilde(&item.file_path), item.match_hint.as_deref())
+        })
+        .collect();
+    let max_width = display_paths.iter().map(|path| path.chars().count()).max().unwrap_or(0);
+    for (item, display_path) in options.iter_mut().zip(display_paths) {
+        item.display_label = Some(format_display_line(&display_path, &item.branch, max_width));
     }
 
     Some(options)
@@ -261,7 +302,7 @@ mod tests {
             full_path: "/base/pyenv-versions".to_string(),
         };
 
-        let hint = match_hint(&repo, MatchKind::OwnerExact);
+        let hint = match_hint(&repo, MatchKind::OwnerExact, &repo.full_path);
 
         assert_eq!(hint, Some("remote: github.com/version-fox/versa-vault".to_string()));
     }
@@ -272,8 +313,28 @@ mod tests {
             file_path: "/tmp/repo".to_string(),
             branch: "main".to_string(),
             match_hint: Some("repo: prog".to_string()),
+            display_label: None,
         };
 
-        assert_eq!(format!("{}", item), "/tmp/repo @main (repo: prog)");
+        assert_eq!(format!("{}", item), "/tmp/repo (repo: prog)  [main]");
+    }
+
+    #[test]
+    fn test_match_hint_repo_name_matches_folder_skips_hint() {
+        let now = chrono::Utc::now().naive_utc();
+        let repo = crate::context::database::models::Repo {
+            created_at: now,
+            updated_at: now,
+            host: "github.com".to_string(),
+            repo: "prog".to_string(),
+            owner: "bytemain".to_string(),
+            remote_url: "https://github.com/bytemain/prog.git".to_string(),
+            base_dir: "/base".to_string(),
+            full_path: "/base/github.com/bytemain/prog".to_string(),
+        };
+
+        let hint = match_hint(&repo, MatchKind::RepoExact, &repo.full_path);
+
+        assert_eq!(hint, None);
     }
 }
