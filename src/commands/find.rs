@@ -61,9 +61,10 @@ fn match_hint(
     match_kind: MatchKind,
     file_path: &str,
 ) -> Option<String> {
+    let repo_name = repo.repo.to_lowercase();
     let repo_folder_matches = Path::new(file_path)
         .file_name()
-        .map(|name| name.to_string_lossy().to_lowercase() == repo.repo.to_lowercase())
+        .map(|name| name.to_string_lossy().to_lowercase() == repo_name)
         .unwrap_or(false);
 
     match match_kind {
@@ -105,7 +106,7 @@ fn format_display_line_with_len(base: &str, branch: &str, width: usize, base_len
     }
 
     let padded_width = width.max(base_len);
-    let padding = padded_width - base_len + BRANCH_PADDING;
+    let padding = padded_width.saturating_sub(base_len) + BRANCH_PADDING;
     format!("{}{}[{}]", base, " ".repeat(padding), branch)
 }
 
