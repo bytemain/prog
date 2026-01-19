@@ -13,6 +13,8 @@ use super::printer::error::handle_inquire_error;
 
 use std::fmt::{Display, Formatter, Result as FmtResult};
 
+const BRANCH_PADDING: usize = 2;
+
 #[derive(Clone, Debug)]
 pub struct FoundItem {
     pub file_path: String,
@@ -103,7 +105,7 @@ fn format_display_line_with_len(base: &str, branch: &str, width: usize, base_len
     }
 
     let padded_width = width.max(base_len);
-    let padding = padded_width - base_len + 2;
+    let padding = padded_width - base_len + BRANCH_PADDING;
     format!("{}{}[{}]", base, " ".repeat(padding), branch)
 }
 
@@ -169,6 +171,7 @@ pub fn find_keyword(c: &Context, keyword: &str) -> Option<Vec<FoundItem>> {
         c.sync_silent();
     }
 
+    let mut max_width = 0;
     let display_paths: Vec<(String, usize)> = options
         .iter()
         .map(|item| {
@@ -177,10 +180,10 @@ pub fn find_keyword(c: &Context, keyword: &str) -> Option<Vec<FoundItem>> {
                 item.match_hint.as_deref(),
             );
             let label_len = label.chars().count();
+            max_width = max_width.max(label_len);
             (label, label_len)
         })
         .collect();
-    let max_width = display_paths.iter().map(|(_, len)| *len).max().unwrap_or(0);
     for (item, (display_path, label_len)) in options.iter_mut().zip(display_paths) {
         item.display_label =
             Some(format_display_line_with_len(&display_path, &item.branch, max_width, label_len));
