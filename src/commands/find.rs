@@ -93,11 +93,17 @@ fn build_left_label(display_path: &str, match_hint: Option<&str>) -> String {
 
 /// Formats a full display line with optional branch information aligned to `width`.
 fn format_display_line(base: &str, branch: &str, width: usize) -> String {
+    let base_len = base.chars().count();
+    format_display_line_with_len(base, branch, width, base_len)
+}
+
+fn format_display_line_with_len(base: &str, branch: &str, width: usize, base_len: usize) -> String {
     if branch.trim().is_empty() {
         return base.to_string();
     }
 
-    let padding = width.saturating_sub(base.chars().count()) + 2;
+    let padded_width = width.max(base_len);
+    let padding = padded_width - base_len + 2;
     format!("{}{}[{}]", base, " ".repeat(padding), branch)
 }
 
@@ -163,15 +169,21 @@ pub fn find_keyword(c: &Context, keyword: &str) -> Option<Vec<FoundItem>> {
         c.sync_silent();
     }
 
-    let display_paths: Vec<String> = options
+    let display_paths: Vec<(String, usize)> = options
         .iter()
         .map(|item| {
-            build_left_label(&path::contract_tilde(&item.file_path), item.match_hint.as_deref())
+            let label = build_left_label(
+                &path::contract_tilde(&item.file_path),
+                item.match_hint.as_deref(),
+            );
+            let label_len = label.chars().count();
+            (label, label_len)
         })
         .collect();
-    let max_width = display_paths.iter().map(|path| path.chars().count()).max().unwrap_or(0);
-    for (item, display_path) in options.iter_mut().zip(display_paths) {
-        item.display_label = Some(format_display_line(&display_path, &item.branch, max_width));
+    let max_width = display_paths.iter().map(|(_, len)| *len).max().unwrap_or(0);
+    for (item, (display_path, label_len)) in options.iter_mut().zip(display_paths) {
+        item.display_label =
+            Some(format_display_line_with_len(&display_path, &item.branch, max_width, label_len));
     }
 
     Some(options)
