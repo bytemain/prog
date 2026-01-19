@@ -94,19 +94,23 @@ fn build_left_label(display_path: &str, match_hint: Option<&str>) -> String {
     }
 }
 
-/// Formats a full display line with optional branch information aligned to `width`.
-fn format_display_line(base: &str, branch: &str, width: usize) -> String {
+/// Formats a full display line with optional branch information aligned to `max_width`.
+fn format_display_line(base: &str, branch: &str, max_width: usize) -> String {
     let base_len = base.chars().count();
-    format_display_line_with_len(base, branch, width, base_len)
+    format_display_line_with_len(base, branch, max_width, base_len)
 }
 
-fn format_display_line_with_len(base: &str, branch: &str, width: usize, base_len: usize) -> String {
+fn format_display_line_with_len(
+    base: &str,
+    branch: &str,
+    max_width: usize,
+    base_len: usize,
+) -> String {
     if branch.trim().is_empty() {
         return base.to_string();
     }
 
-    let effective_width = width.max(base_len);
-    let padding = effective_width.saturating_sub(base_len) + BRANCH_PADDING;
+    let padding = max_width.saturating_sub(base_len) + BRANCH_PADDING;
     format!("{}{}[{}]", base, " ".repeat(padding), branch)
 }
 
