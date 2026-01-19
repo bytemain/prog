@@ -82,6 +82,7 @@ fn match_hint(
     }
 }
 
+/// Builds the left-side label shown in selection lists, including any match hint.
 fn build_left_label(display_path: &str, match_hint: Option<&str>) -> String {
     if let Some(hint) = match_hint.filter(|hint| !hint.trim().is_empty()) {
         format!("{} ({})", display_path, hint)
@@ -90,13 +91,13 @@ fn build_left_label(display_path: &str, match_hint: Option<&str>) -> String {
     }
 }
 
+/// Formats a full display line with optional branch information aligned to `width`.
 fn format_display_line(base: &str, branch: &str, width: usize) -> String {
     if branch.trim().is_empty() {
         return base.to_string();
     }
 
-    let base_len = base.chars().count();
-    let padding = width.saturating_sub(base_len) + 2;
+    let padding = width.saturating_sub(base.chars().count()) + 2;
     format!("{}{}[{}]", base, " ".repeat(padding), branch)
 }
 
