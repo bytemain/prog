@@ -10,6 +10,37 @@ use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 use strsim::levenshtein;
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum MatchKind {
+    RepoExact,
+    FullNameExact,
+    RepoContains,
+    PathContains,
+    OwnerExact,
+    OwnerContains,
+    RemoteContains,
+}
+
+impl MatchKind {
+    fn rank(&self) -> u8 {
+        match self {
+            MatchKind::RepoExact => 0,
+            MatchKind::FullNameExact => 1,
+            MatchKind::RepoContains => 2,
+            MatchKind::PathContains => 3,
+            MatchKind::OwnerExact => 4,
+            MatchKind::OwnerContains => 5,
+            MatchKind::RemoteContains => 6,
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct MatchedRepo {
+    pub repo: Repo,
+    pub match_kind: MatchKind,
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Data {
     version: String,
@@ -65,39 +96,68 @@ impl Data {
         self.records.insert(full_path, updated_record);
     }
 
-    pub fn find(&self, keyword: &str) -> Vec<Repo> {
+    pub fn find(&self, keyword: &str) -> Vec<MatchedRepo> {
         let keyword = keyword.to_lowercase();
 
         // Use iterator to filter records first, then clone only matching records.
         // This is more memory-efficient than get_all_sorted() which clones all records upfront.
         // We still need to clone matching records for the sort operation below.
-        let mut results: Vec<Repo> = self
+        let mut results: Vec<MatchedRepo> = self
             .records
             .iter()
-            .filter(|r| {
-                r.full_path.to_lowercase().contains(&keyword)
-                    || r.remote_url.to_lowercase().contains(&keyword)
+            .filter_map(|repo| {
+                match_kind(repo, &keyword)
+                    .map(|match_kind| MatchedRepo { repo: repo.clone(), match_kind })
             })
-            .cloned()
             .collect();
 
-        // Sort results by Levenshtein distance (similarity to keyword)
+        // Sort results by match priority, then Levenshtein distance (similarity to keyword)
         results.sort_by(|a, b| {
-            // Calculate Levenshtein distance for repo names
-            let dist_a = levenshtein(&a.repo.to_lowercase(), &keyword);
-            let dist_b = levenshtein(&b.repo.to_lowercase(), &keyword);
+            let rank_cmp = a.match_kind.rank().cmp(&b.match_kind.rank());
+            if rank_cmp != std::cmp::Ordering::Equal {
+                return rank_cmp;
+            }
 
-            // Sort by distance (lower is better/more similar)
+            let repo_a = a.repo.repo.to_lowercase();
+            let repo_b = b.repo.repo.to_lowercase();
+            let dist_a = levenshtein(&repo_a, &keyword);
+            let dist_b = levenshtein(&repo_b, &keyword);
+
             let dist_cmp = dist_a.cmp(&dist_b);
             if dist_cmp != std::cmp::Ordering::Equal {
                 return dist_cmp;
             }
 
-            // If distances are the same, sort by repository name alphabetically
-            a.repo.to_lowercase().cmp(&b.repo.to_lowercase())
+            repo_a.cmp(&repo_b)
         });
 
         results
+    }
+}
+
+fn match_kind(repo: &Repo, keyword: &str) -> Option<MatchKind> {
+    let repo_name = repo.repo.to_lowercase();
+    let owner = repo.owner.to_lowercase();
+    let full_path = repo.full_path.to_lowercase();
+    let remote_url = repo.remote_url.to_lowercase();
+    let full_name = format!("{}/{}", owner, repo_name);
+
+    if repo_name == keyword {
+        Some(MatchKind::RepoExact)
+    } else if full_name == keyword {
+        Some(MatchKind::FullNameExact)
+    } else if repo_name.contains(keyword) {
+        Some(MatchKind::RepoContains)
+    } else if full_path.contains(keyword) {
+        Some(MatchKind::PathContains)
+    } else if owner == keyword {
+        Some(MatchKind::OwnerExact)
+    } else if owner.contains(keyword) {
+        Some(MatchKind::OwnerContains)
+    } else if remote_url.contains(keyword) {
+        Some(MatchKind::RemoteContains)
+    } else {
+        None
     }
 }
 
@@ -185,7 +245,7 @@ impl Database {
     ) {
         self.data.record_item(base_dir, remote_url, host, repo, owner, full_path);
     }
-    pub fn find(&self, keyword: &str) -> Vec<Repo> {
+    pub fn find(&self, keyword: &str) -> Vec<MatchedRepo> {
         self.data.find(keyword)
     }
     pub fn remove(&mut self, path: &str) {
@@ -263,7 +323,7 @@ mod tests {
 
         assert!(!results.is_empty(), "Should find results");
         assert_eq!(
-            results[0].repo, "prog",
+            results[0].repo.repo, "prog",
             "Exact match 'prog' should be first (Levenshtein distance 0)"
         );
     }
@@ -279,10 +339,10 @@ mod tests {
         let results = data.find("prog");
 
         // First result should be exact match
-        assert_eq!(results[0].repo, "prog", "Exact match should be first");
+        assert_eq!(results[0].repo.repo, "prog", "Exact match should be first");
 
         // Verify results are sorted by Levenshtein distance
-        let repo_names: Vec<&str> = results.iter().map(|r| r.repo.as_str()).collect();
+        let repo_names: Vec<&str> = results.iter().map(|r| r.repo.repo.as_str()).collect();
 
         // "prog" (dist 0) should come before "prog-cli" (dist 4)
         let prog_pos = repo_names.iter().position(|&r| r == "prog").unwrap();
@@ -326,11 +386,11 @@ mod tests {
         let results = data.find("prog");
 
         // "prog" should be first (distance 0)
-        assert_eq!(results[0].repo, "prog", "Exact match should be first");
+        assert_eq!(results[0].repo.repo, "prog", "Exact match should be first");
 
         // "progs" and "progx" both have distance 1, should be alphabetically sorted
         // So "progs" should come before "progx"
-        let repo_names: Vec<&str> = results.iter().skip(1).map(|r| r.repo.as_str()).collect();
+        let repo_names: Vec<&str> = results.iter().skip(1).map(|r| r.repo.repo.as_str()).collect();
         assert_eq!(
             repo_names,
             vec!["progs", "progx"],
@@ -347,11 +407,39 @@ mod tests {
         let results2 = data.find("prog");
         let results3 = data.find("prog");
 
-        let order1: Vec<&str> = results1.iter().map(|r| r.repo.as_str()).collect();
-        let order2: Vec<&str> = results2.iter().map(|r| r.repo.as_str()).collect();
-        let order3: Vec<&str> = results3.iter().map(|r| r.repo.as_str()).collect();
+        let order1: Vec<&str> = results1.iter().map(|r| r.repo.repo.as_str()).collect();
+        let order2: Vec<&str> = results2.iter().map(|r| r.repo.repo.as_str()).collect();
+        let order3: Vec<&str> = results3.iter().map(|r| r.repo.repo.as_str()).collect();
 
         assert_eq!(order1, order2, "Find results should be deterministic");
         assert_eq!(order2, order3, "Find results should be deterministic");
+    }
+
+    #[test]
+    fn test_find_prioritizes_repo_match_over_owner_match() {
+        let mut data = Data::new();
+        data.record_item(
+            "/base",
+            "https://github.com/user/version-fox.git",
+            "github.com",
+            "version-fox",
+            "user",
+            "/base/github.com/user/version-fox",
+        );
+        data.record_item(
+            "/base",
+            "https://github.com/version-fox/versa-vault.git",
+            "github.com",
+            "versa-vault",
+            "version-fox",
+            // Non-standard path to ensure owner matching works when the folder name differs.
+            "/base/pyenv-versions",
+        );
+
+        let results = data.find("version-fox");
+
+        assert_eq!(results[0].repo.repo, "version-fox");
+        assert_eq!(results[0].match_kind, MatchKind::RepoExact);
+        assert_eq!(results[1].match_kind, MatchKind::OwnerExact);
     }
 }
