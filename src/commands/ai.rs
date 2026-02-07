@@ -55,8 +55,14 @@ fn call_chat_api(
 
     let response_json: Value = serde_json::from_str(&response_text)?;
 
-    let content =
-        response_json["choices"][0]["message"]["content"].as_str().unwrap_or("").to_string();
+    let content = response_json
+        .get("choices")
+        .and_then(|c| c.get(0))
+        .and_then(|c| c.get("message"))
+        .and_then(|m| m.get("content"))
+        .and_then(|c| c.as_str())
+        .unwrap_or("")
+        .to_string();
 
     Ok(content)
 }
