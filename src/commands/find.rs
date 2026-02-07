@@ -69,7 +69,7 @@ fn match_hint(
 
     match match_kind {
         MatchKind::PathContains => None,
-        MatchKind::RepoExact | MatchKind::RepoContains => {
+        MatchKind::RepoExact | MatchKind::RepoContains | MatchKind::RepoFuzzy => {
             if repo_folder_matches {
                 None
             } else {

@@ -19,6 +19,7 @@ pub enum MatchKind {
     OwnerExact,
     OwnerContains,
     RemoteContains,
+    RepoFuzzy,
 }
 
 impl MatchKind {
@@ -31,6 +32,7 @@ impl MatchKind {
             MatchKind::OwnerExact => 4,
             MatchKind::OwnerContains => 5,
             MatchKind::RemoteContains => 6,
+            MatchKind::RepoFuzzy => 7,
         }
     }
 }
@@ -135,6 +137,31 @@ impl Data {
     }
 }
 
+/// Check if all parts of the keyword appear in order in the target string.
+/// For example, "abcd-jkl" matches "abcd-efg-jkl" because both "abcd" and "jkl"
+/// appear in order as segments of the target when split by '-'.
+fn fuzzy_segments_match(target: &str, keyword: &str) -> bool {
+    let keyword_parts: Vec<&str> = keyword.split('-').collect();
+    let target_parts: Vec<&str> = target.split('-').collect();
+
+    let mut target_idx = 0;
+    for kp in &keyword_parts {
+        let mut found = false;
+        while target_idx < target_parts.len() {
+            if target_parts[target_idx] == *kp {
+                target_idx += 1;
+                found = true;
+                break;
+            }
+            target_idx += 1;
+        }
+        if !found {
+            return false;
+        }
+    }
+    true
+}
+
 fn match_kind(repo: &Repo, keyword: &str) -> Option<MatchKind> {
     let repo_name = repo.repo.to_lowercase();
     let owner = repo.owner.to_lowercase();
@@ -156,6 +183,8 @@ fn match_kind(repo: &Repo, keyword: &str) -> Option<MatchKind> {
         Some(MatchKind::OwnerContains)
     } else if remote_url.contains(keyword) {
         Some(MatchKind::RemoteContains)
+    } else if fuzzy_segments_match(&repo_name, keyword) {
+        Some(MatchKind::RepoFuzzy)
     } else {
         None
     }
@@ -441,5 +470,77 @@ mod tests {
         assert_eq!(results[0].repo.repo, "version-fox");
         assert_eq!(results[0].match_kind, MatchKind::RepoExact);
         assert_eq!(results[1].match_kind, MatchKind::OwnerExact);
+    }
+
+    #[test]
+    fn test_find_fuzzy_segments_match() {
+        let mut data = Data::new();
+        data.record_item(
+            "/base",
+            "https://github.com/user/abcd-efg-jkl.git",
+            "github.com",
+            "abcd-efg-jkl",
+            "user",
+            "/base/github.com/user/abcd-efg-jkl",
+        );
+
+        // "abcd-jkl" should fuzzy match "abcd-efg-jkl" because segments "abcd" and "jkl"
+        // appear in order in the target
+        let results = data.find("abcd-jkl");
+
+        assert!(!results.is_empty(), "Should find fuzzy match for abcd-jkl");
+        assert_eq!(results[0].repo.repo, "abcd-efg-jkl");
+        assert_eq!(results[0].match_kind, MatchKind::RepoFuzzy);
+    }
+
+    #[test]
+    fn test_fuzzy_segments_match_function() {
+        // Basic case from issue: "abcd-jkl" should match "abcd-efg-jkl"
+        assert!(fuzzy_segments_match("abcd-efg-jkl", "abcd-jkl"));
+
+        // Exact segment match
+        assert!(fuzzy_segments_match("abcd-efg-jkl", "abcd-efg-jkl"));
+
+        // Single segment match
+        assert!(fuzzy_segments_match("abcd-efg-jkl", "abcd"));
+        assert!(fuzzy_segments_match("abcd-efg-jkl", "jkl"));
+
+        // Non-matching segments
+        assert!(!fuzzy_segments_match("abcd-efg-jkl", "xyz-jkl"));
+
+        // Wrong order should not match
+        assert!(!fuzzy_segments_match("abcd-efg-jkl", "jkl-abcd"));
+
+        // Partial segment should not match
+        assert!(!fuzzy_segments_match("abcd-efg-jkl", "abc-jkl"));
+    }
+
+    #[test]
+    fn test_fuzzy_match_ranks_below_contains() {
+        let mut data = Data::new();
+        data.record_item(
+            "/base",
+            "https://github.com/user/abcd-jkl.git",
+            "github.com",
+            "abcd-jkl",
+            "user",
+            "/base/github.com/user/abcd-jkl",
+        );
+        data.record_item(
+            "/base",
+            "https://github.com/user/abcd-efg-jkl.git",
+            "github.com",
+            "abcd-efg-jkl",
+            "user",
+            "/base/github.com/user/abcd-efg-jkl",
+        );
+
+        let results = data.find("abcd-jkl");
+
+        // "abcd-jkl" should be exact match (rank 0), "abcd-efg-jkl" should be fuzzy (rank 7)
+        assert_eq!(results[0].repo.repo, "abcd-jkl");
+        assert_eq!(results[0].match_kind, MatchKind::RepoExact);
+        assert_eq!(results[1].repo.repo, "abcd-efg-jkl");
+        assert_eq!(results[1].match_kind, MatchKind::RepoFuzzy);
     }
 }
