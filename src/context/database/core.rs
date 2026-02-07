@@ -137,23 +137,23 @@ impl Data {
     }
 }
 
-/// Check if all parts of the keyword appear in order in the target string.
-/// For example, "abcd-jkl" matches "abcd-efg-jkl" because both "abcd" and "jkl"
-/// appear in order as segments of the target when split by '-'.
-fn fuzzy_segments_match(target: &str, keyword: &str) -> bool {
-    let keyword_parts: Vec<&str> = keyword.split('-').collect();
-    let target_parts: Vec<&str> = target.split('-').collect();
+/// Split a string by common separators used in repository names (-, _, .).
+fn split_segments(s: &str) -> impl Iterator<Item = &str> {
+    s.split(['-', '_', '.'])
+}
 
-    let mut target_idx = 0;
-    for kp in &keyword_parts {
+/// Check if all segments of the keyword appear in order in the target string.
+/// For example, "abcd-jkl" matches "abcd-efg-jkl" because both "abcd" and "jkl"
+/// appear in order as segments of the target. Supports '-', '_', and '.' as delimiters.
+fn fuzzy_segments_match(target: &str, keyword: &str) -> bool {
+    let mut target_iter = split_segments(target).peekable();
+    for kp in split_segments(keyword) {
         let mut found = false;
-        while target_idx < target_parts.len() {
-            if target_parts[target_idx] == *kp {
-                target_idx += 1;
+        for tp in target_iter.by_ref() {
+            if tp == kp {
                 found = true;
                 break;
             }
-            target_idx += 1;
         }
         if !found {
             return false;
@@ -513,6 +513,15 @@ mod tests {
 
         // Partial segment should not match
         assert!(!fuzzy_segments_match("abcd-efg-jkl", "abc-jkl"));
+
+        // Underscore delimiter
+        assert!(fuzzy_segments_match("abcd_efg_jkl", "abcd_jkl"));
+
+        // Dot delimiter
+        assert!(fuzzy_segments_match("abcd.efg.jkl", "abcd.jkl"));
+
+        // Mixed delimiters
+        assert!(fuzzy_segments_match("abcd-efg_jkl", "abcd-jkl"));
     }
 
     #[test]
