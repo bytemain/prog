@@ -198,11 +198,20 @@ pub fn find_keyword(c: &Context, keyword: &str) -> Option<Vec<FoundItem>> {
     Some(options)
 }
 
-pub fn run(c: &Context, keyword: &str, _query: bool) {
-    if _query {
-        query(&c, &keyword);
+pub fn run(c: &Context, keyword: &str, _query: bool, ai: bool) {
+    let effective_keyword = if ai {
+        match super::ai::resolve_intent(c, keyword) {
+            Some(resolved) => resolved,
+            None => return,
+        }
     } else {
-        find(&c, &keyword);
+        keyword.to_string()
+    };
+
+    if _query {
+        query(c, &effective_keyword);
+    } else {
+        find(c, &effective_keyword);
     }
 }
 

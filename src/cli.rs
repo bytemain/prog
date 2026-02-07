@@ -19,6 +19,8 @@ pub enum ECommands {
         keyword: String,
         #[arg(short = 'q', long = "query", help = "Only query result")]
         query: bool,
+        #[arg(long = "ai", help = "Use AI to interpret natural language intent")]
+        ai: bool,
     },
     #[command(about = "Sync repositories")]
     Sync,

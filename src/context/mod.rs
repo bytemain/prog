@@ -1,4 +1,4 @@
-mod configuration;
+pub mod configuration;
 pub mod core;
 pub mod database;
 

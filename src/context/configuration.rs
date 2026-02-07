@@ -10,6 +10,16 @@ fn default_auto_sync_interval_secs() -> i64 {
     3600
 }
 
+#[derive(Deserialize, Debug, Clone, Default)]
+pub struct AiConfig {
+    #[serde(default)]
+    pub api_key: String,
+    #[serde(default)]
+    pub model: String,
+    #[serde(default)]
+    pub base_url: String,
+}
+
 #[derive(Deserialize, Debug, Clone)]
 pub struct Config {
     #[serde(default)]
@@ -20,6 +30,8 @@ pub struct Config {
     pub tmp_dir: String,
     #[serde(default = "default_auto_sync_interval_secs")]
     pub auto_sync_interval_secs: i64,
+    #[serde(default)]
+    pub ai: AiConfig,
 }
 
 impl Config {
