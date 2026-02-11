@@ -7,7 +7,7 @@ edition = "2024"
 serde = { version = "1.0.228", features = ["derive"] }
 clap = { version = "4.5.57", features = ["derive"] }
 clap_complete = "4.5.65"
-anyhow = "1.0.70"
+anyhow = "1.0.101"
 chrono = { version = "0.4.43", features = ["serde"] }
 dirs = "6.0.0"
 log = "0.4.29"
