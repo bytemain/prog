@@ -43,6 +43,17 @@ pub enum ECommands {
     },
     #[command(about = "List all repositories")]
     List,
+    #[command(about = "Check for repositories with uncommitted or unpushed changes")]
+    Check {
+        #[arg(
+            short = 'd',
+            long = "dirty-only",
+            help = "Only report repositories with uncommitted changes"
+        )]
+        dirty_only: bool,
+        #[arg(long = "json", help = "Output the result as JSON")]
+        json: bool,
+    },
     Tmp(commands::tmp::TmpArgs),
 }
 

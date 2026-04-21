@@ -23,6 +23,12 @@ fn main() {
         Some(ECommands::Remove { path, yes }) => commands::remove::run(&mut context, path, yes),
         Some(ECommands::Clean { yes }) => commands::clean::run(&context, yes),
         Some(ECommands::List) => commands::list::run(&mut context),
+        Some(ECommands::Check { dirty_only, json }) => {
+            let issues = commands::check::run(&mut context, dirty_only, json);
+            if issues > 0 {
+                std::process::exit(1);
+            }
+        }
         Some(ECommands::Tmp(tmp)) => {
             let tmp_cmd = tmp.command;
             if tmp_cmd.is_none() {
