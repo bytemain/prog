@@ -65,6 +65,29 @@ You can also list all repositories:
 > p list
 ```
 
+## Check for unsynced changes
+
+Before switching machines, you can check if any tracked repository has uncommitted or unpushed changes:
+
+```sh
+> p check
+```
+
+The output groups repositories by issue:
+
+- **Dirty** — uncommitted changes (modified, untracked, or conflicted files)
+- **Unpushed** — local commits ahead of the upstream branch
+- **No upstream** — local branch has no upstream configured
+- **Detached HEAD** — current HEAD is detached
+- **Unreadable** — `git status` failed (e.g. corrupted repo)
+
+The exit code is non-zero when any issue is found, so it can be used in shell hooks.
+
+Useful flags:
+
+- `-d`, `--dirty-only` — only report repositories with uncommitted changes
+- `--json` — print machine-readable JSON output
+
 ## Debug
 
 use `PROG_LOG="debug"` to enable debug logs
