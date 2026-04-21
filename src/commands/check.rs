@@ -28,7 +28,7 @@ struct JsonEntry<'a> {
 }
 
 fn collect_results(c: &mut Context) -> Vec<CheckResult> {
-    c.auto_sync_silent();
+    c.sync_silent();
     let items = c.database_mut().get_all_items();
     items
         .into_par_iter()
