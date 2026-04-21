@@ -2,9 +2,9 @@ use crate::context::Context;
 use crate::helpers::git::get_remote_url;
 use crate::helpers::git::parse_git_url;
 use ignore::WalkBuilder;
-use log::error;
+use log::{error, warn};
 use rayon::prelude::*;
-use std::{sync::mpsc::channel, time::Instant};
+use std::{path::Path, sync::mpsc::channel, time::Instant};
 
 #[derive(Debug, Clone)]
 pub struct SyncItem {
@@ -18,6 +18,16 @@ pub struct SyncItem {
 
 fn read_repo_from_dir(dir: &str) -> Vec<SyncItem> {
     let mut repos: Vec<SyncItem> = Vec::new();
+    let dir_path = Path::new(dir);
+    if !dir_path.exists() {
+        warn!("Skipping missing base directory: {}", dir);
+        return repos;
+    }
+    if !dir_path.is_dir() {
+        warn!("Skipping non-directory base path: {}", dir);
+        return repos;
+    }
+
     let (tx, rx) = channel::<SyncItem>();
     let threads = std::thread::available_parallelism().map_or(1, |n| n.get()).min(12);
 
@@ -25,7 +35,7 @@ fn read_repo_from_dir(dir: &str) -> Vec<SyncItem> {
         .threads(threads)
         .max_depth(Some(3))
         .hidden(true)
-        .filter_entry(|entry| entry.file_type().unwrap().is_dir())
+        .filter_entry(|entry| entry.file_type().map(|file_type| file_type.is_dir()).unwrap_or(false))
         .build_parallel()
         .run(|| {
             let tx_clone = tx.clone();
@@ -109,6 +119,27 @@ fn read_repo_from_dir(dir: &str) -> Vec<SyncItem> {
     }
 
     repos
+}
+
+#[cfg(test)]
+mod tests {
+    use super::read_repo_from_dir;
+
+    #[test]
+    fn read_repo_from_missing_dir_returns_empty() {
+        let missing_dir = std::env::temp_dir().join(format!(
+            "prog-sync-test-missing-dir-{}",
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .expect("system clock should be after unix epoch")
+                .as_nanos()
+        ));
+        assert!(!missing_dir.exists(), "test path should not exist");
+        let repos = read_repo_from_dir(
+            missing_dir.to_str().expect("temp path should be valid UTF-8 for this test"),
+        );
+        assert!(repos.is_empty());
+    }
 }
 
 pub fn sync(c: &Context, silent: bool) {
