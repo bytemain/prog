@@ -128,7 +128,7 @@ mod tests {
     #[test]
     fn read_repo_from_missing_dir_returns_empty() {
         let missing_dir = std::env::temp_dir().join(format!(
-            "prog-test-missing-dir-{}",
+            "prog-sync-test-missing-dir-{}",
             std::time::SystemTime::now()
                 .duration_since(std::time::UNIX_EPOCH)
                 .expect("system clock should be after unix epoch")
