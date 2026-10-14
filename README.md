@@ -2,9 +2,42 @@
 
 ## Installation
 
+### Homebrew (macOS / Linux)
+
+```sh
+brew tap bytemain/prog https://github.com/bytemain/prog
+brew install bytemain/prog/prog
+```
+
+Upgrade later with `brew upgrade prog`.
+
+### Install script (macOS / Linux)
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/bytemain/prog/main/scripts/install.sh | sh
+```
+
+Installs to `~/.local/bin` by default (override with `PROG_INSTALL_DIR`; pin a version with `PROG_VERSION=v0.1.0`).
+
+### Prebuilt binaries
+
+Download an archive for your platform (including Windows) from [GitHub Releases](https://github.com/bytemain/prog/releases).
+
+### From source
+
 ```sh
 cargo install --git https://github.com/bytemain/prog.git
 ```
+
+## Releasing
+
+Bump `version` in `Cargo.toml`, then push a matching tag:
+
+```sh
+git tag v0.1.0 && git push origin v0.1.0
+```
+
+CI builds macOS (arm64/x64), Linux (arm64/x64, static musl) and Windows binaries, publishes the GitHub Release, and updates `Formula/prog.rb` on `main`.
 
 
 ## Setup
