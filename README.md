@@ -8,6 +8,13 @@
 brew install bytemain/tap/prog
 ```
 
+### Scoop (Windows)
+
+```powershell
+scoop bucket add bytemain https://github.com/bytemain/scoop-bucket
+scoop install bytemain/prog
+```
+
 ### Install script (macOS / Linux)
 
 ```sh
@@ -34,7 +41,7 @@ Bump `version` in `Cargo.toml`, merge it, then push a matching tag:
 git tag v0.1.0 && git push origin v0.1.0
 ```
 
-The [Release workflow](.github/workflows/release.yml) builds binaries for macOS (arm64/x86_64), Linux (arm64/x86_64, static musl) and Windows, publishes the GitHub Release, and updates the formula in [bytemain/homebrew-tap](https://github.com/bytemain/homebrew-tap) (needs the `HOMEBREW_TAP_DEPLOY_KEY` secret, a write deploy key of the tap repo).
+The [Release workflow](.github/workflows/release.yml) builds binaries for macOS (arm64/x86_64), Linux (arm64/x86_64, static musl) and Windows, publishes the GitHub Release, and updates the formula in [bytemain/homebrew-tap](https://github.com/bytemain/homebrew-tap) and the manifest in [bytemain/scoop-bucket](https://github.com/bytemain/scoop-bucket) (needs the `HOMEBREW_TAP_DEPLOY_KEY` and `SCOOP_BUCKET_DEPLOY_KEY` secrets, write deploy keys of those repos).
 
 
 ## Setup
