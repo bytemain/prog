@@ -2,9 +2,39 @@
 
 ## Installation
 
+### Homebrew (macOS / Linux)
+
+```sh
+brew install bytemain/tap/prog
+```
+
+### Install script (macOS / Linux)
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/bytemain/prog/main/scripts/install.sh | sh
+```
+
+Installs to `~/.local/bin` by default; set `PROG_INSTALL_DIR` to change it, or `PROG_VERSION=v0.1.0` to pin a version.
+
+### Prebuilt binaries
+
+Download the archive for your platform (including Windows) from [GitHub Releases](https://github.com/bytemain/prog/releases).
+
+### From source
+
 ```sh
 cargo install --git https://github.com/bytemain/prog.git
 ```
+
+## Releasing
+
+Bump `version` in `Cargo.toml`, merge it, then push a matching tag:
+
+```sh
+git tag v0.1.0 && git push origin v0.1.0
+```
+
+The [Release workflow](.github/workflows/release.yml) builds binaries for macOS (arm64/x86_64), Linux (arm64/x86_64, static musl) and Windows, publishes the GitHub Release, and updates the formula in [bytemain/homebrew-tap](https://github.com/bytemain/homebrew-tap) (needs the `HOMEBREW_TAP_DEPLOY_KEY` secret, a write deploy key of the tap repo).
 
 
 ## Setup
